@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 
-import { Balance,ConnectedWallets } from '@/types/wallet'
+import { Balance, ConnectedWallets } from '@/types/wallet'
 
 interface BalanceDisplayProps {
   connectedWallets: ConnectedWallets

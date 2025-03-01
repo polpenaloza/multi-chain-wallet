@@ -1,6 +1,6 @@
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom'
 import { ethers } from 'ethers'
-import { AddressPurpose,request } from 'sats-connect'
+import { AddressPurpose, request } from 'sats-connect'
 
 import { WalletType } from '@/types/wallet'
 

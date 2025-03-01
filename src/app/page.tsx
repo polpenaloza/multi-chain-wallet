@@ -27,7 +27,11 @@ export default function Home() {
   }, [])
 
   if (!isWalletReady) {
-    return <div className="flex items-center justify-center min-h-screen">Loading wallet providers...</div>
+    return (
+      <div className='flex items-center justify-center min-h-screen'>
+        Loading wallet providers...
+      </div>
+    )
   }
 
   return (

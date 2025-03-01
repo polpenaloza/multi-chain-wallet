@@ -14,7 +14,7 @@ const eslintConfig = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     plugins: {
-      'simple-import-sort': simpleImportSortPlugin
+      'simple-import-sort': simpleImportSortPlugin,
     },
     rules: {
       'simple-import-sort/imports': [
@@ -40,10 +40,10 @@ const eslintConfig = [
             // Other relative imports. Put same-folder imports and `.` last
             ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
             // Style imports
-            ['^.+\\.?(css)$']
-          ]
-        }
-      ]
+            ['^.+\\.?(css)$'],
+          ],
+        },
+      ],
     },
     ignores: [
       'node_modules',
@@ -54,8 +54,8 @@ const eslintConfig = [
       '.husky',
       '.github',
       '.vscode',
-      '.env'
-    ]
+      '.env',
+    ],
   },
 ]
 
