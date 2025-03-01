@@ -16,6 +16,7 @@
     "daisyui": "^5.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
+    "husky": "^9.1.7",
     "prettier": "^3.5.2",
     "tailwindcss": "^4",
     "typescript": "5.7.2"
@@ -48,7 +49,7 @@
     "lint": "next lint",
     "maintenance": "pnpm clean:quick && pnpm install",
     "nuke": "pnpm clean && rm pnpm-lock.yaml && pnpm install",
-    "prepare": "husky install",
+    "prepare": "husky",
     "start": "next start"
   },
   "version": "0.1.0"
