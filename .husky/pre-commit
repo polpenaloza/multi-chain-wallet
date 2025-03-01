@@ -1,6 +1,10 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
 # don't run these commands in ci
 if [ -n "$CI" ]; then
   exit 0
 fi
+pnpm lint
 pnpm format || exit 1
 git add .
