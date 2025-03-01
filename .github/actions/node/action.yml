@@ -1,0 +1,21 @@
+# .github/actions/node/action.yml
+
+name: "Node Cache restoration"
+description: "Setup a NodeJS environment and restore node modules cache"
+
+inputs:
+  node-version:
+    description: "Node version to use, default to (20.x)"
+    required: true
+    default: 20.8.1
+
+runs:
+  using: "composite"
+  steps:
+    - uses: pnpm/action-setup@v2
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: "pnpm"
+    - shell: bash
+      run: pnpm install

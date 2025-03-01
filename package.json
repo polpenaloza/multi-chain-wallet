@@ -1,29 +1,55 @@
 {
-  "name": "multi-chain-wallet",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "packageManager": "pnpm@9.15.0",
   "dependencies": {
     "next": "15.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@commitlint/config-conventional": "^19.7.1",
+    "@commitlint/types": "^19.5.0",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "commitlint": "^19.7.1",
     "daisyui": "^5.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
+    "prettier": "^3.5.2",
     "tailwindcss": "^4",
     "typescript": "5.7.2"
-  }
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": "please-use-pnpm",
+    "pnpm": ">=9.x",
+    "yarn": "please-use-pnpm"
+  },
+  "name": "multi-chain-wallet",
+  "packageManager": "pnpm@9.15.0",
+  "private": true,
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/polpenaloza/multi-chain-wallet.git"
+  },
+  "scripts": {
+    "build": "next build",
+    "check:types": "tsc --pretty --noEmit",
+    "clean": "pnpm clean:dist && pnpm clean:eslint && pnpm clean:next && pnpm clean:out && pnpm clean:node",
+    "clean:dist": "find . -name dist | xargs rm -rf",
+    "clean:eslint": "find . -name .eslintcache | xargs rm -rf",
+    "clean:next": "find . -name .next | xargs rm -rf",
+    "clean:node": "find . -name node_modules | xargs rm -rf",
+    "clean:out": "find . -name out | xargs rm -rf",
+    "clean:quick": "find . -name node_modules -o -name .next -o -name dist -type d -prune | xargs rm -rf",
+    "dev": "next dev --turbopack",
+    "format": "prettier . --write",
+    "lint": "next lint",
+    "maintenance": "pnpm clean:quick && pnpm install",
+    "nuke": "pnpm clean && rm pnpm-lock.yaml && pnpm install",
+    "prepare": "husky install",
+    "start": "next start"
+  },
+  "version": "0.1.0"
 }

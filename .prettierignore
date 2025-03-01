@@ -1,0 +1,19 @@
+# Add files here to ignore them from prettier formatting
+
+.circleci
+.github
+.husky
+.next
+.storybook
+.vscode
+.yarn
+.pnpm
+.turbo
+
+build
+dist
+node_modules
+out/
+coverage/
+next-env.*
+pnpm-lock.yaml
