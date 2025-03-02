@@ -22,6 +22,35 @@ const initialWallets: ConnectedWallets = {
 // Local storage key for persisting wallet connections
 const STORAGE_KEY = 'connected_wallets'
 
+// Helper to safely access localStorage - only called client-side
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    if (typeof window === 'undefined') return null
+    try {
+      return localStorage.getItem(key)
+    } catch (error) {
+      console.error(`Error reading from localStorage: ${key}`, error)
+      return null
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.setItem(key, value)
+    } catch (error) {
+      console.error(`Error writing to localStorage: ${key}`, error)
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.removeItem(key)
+    } catch (error) {
+      console.error(`Error removing from localStorage: ${key}`, error)
+    }
+  },
+}
+
 // Helper to save wallet connections to localStorage - only called client-side
 const saveWalletsToStorage = (wallets: ConnectedWallets) => {
   try {
@@ -62,7 +91,7 @@ const saveWalletsToStorage = (wallets: ConnectedWallets) => {
         cleanWallets.bitcoin = wallets.bitcoin
       }
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanWallets))
+      safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(cleanWallets))
     }
   } catch (error) {
     console.error('Failed to save wallet connections to storage:', error)
@@ -72,7 +101,7 @@ const saveWalletsToStorage = (wallets: ConnectedWallets) => {
 // Helper to load wallet connections from localStorage - only called client-side
 const loadWalletsFromStorage = (): ConnectedWallets => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = safeLocalStorage.getItem(STORAGE_KEY)
     if (stored) {
       const parsedWallets = JSON.parse(stored)
 
@@ -119,7 +148,7 @@ const loadWalletsFromStorage = (): ConnectedWallets => {
   } catch (error) {
     console.error('Failed to load wallet connections from storage:', error)
     // If there's an error, clear the corrupted data
-    localStorage.removeItem(STORAGE_KEY)
+    safeLocalStorage.removeItem(STORAGE_KEY)
   }
   return initialWallets
 }
@@ -159,13 +188,17 @@ export function useWalletConnection() {
           if (type === 'evm') {
             validatedWallets.evm = savedWallets.evm
           } else {
-            // For other wallet types, check if they're still connected
-            const isStillConnected = await checkWalletConnection(
-              savedWallets[type]!
-            )
+            try {
+              // For other wallet types, check if they're still connected
+              const isStillConnected = await checkWalletConnection(
+                savedWallets[type]!
+              )
 
-            if (isStillConnected) {
-              validatedWallets[type] = savedWallets[type]
+              if (isStillConnected) {
+                validatedWallets[type] = savedWallets[type]
+              }
+            } catch (error) {
+              console.error(`Error checking ${type} wallet connection:`, error)
             }
           }
         }
@@ -229,16 +262,21 @@ export function useWalletConnection() {
           wallet = await connectSolanaWallet()
           break
         case 'bitcoin':
-          wallet = await connectBitcoinWallet()
+          try {
+            wallet = await connectBitcoinWallet()
+          } catch (error) {
+            console.error('Bitcoin wallet connection error:', error)
+            throw error
+          }
           break
         default:
           throw new Error('Unsupported wallet type')
       }
 
-      setConnectedWallets({
-        ...connectedWallets,
+      setConnectedWallets((prev) => ({
+        ...prev,
         [type]: wallet,
-      })
+      }))
 
       toast.success(`${type.toUpperCase()} wallet connected`)
       setIsConnecting(false)

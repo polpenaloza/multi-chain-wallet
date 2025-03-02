@@ -1,7 +1,6 @@
 import { createWalletClient, custom } from 'viem'
 
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom'
-import { AddressPurpose, request } from 'sats-connect'
 
 import { WalletType } from '@/types/wallet'
 
@@ -94,6 +93,9 @@ export async function connectBitcoinWallet(): Promise<WalletType> {
   try {
     console.log('Attempting to connect to Bitcoin wallet...')
 
+    // Dynamically import sats-connect to prevent hydration issues
+    const { AddressPurpose, request } = await import('sats-connect')
+
     // Check if Xverse is available through sats-connect
     // We'll let the sats-connect library handle the detection
     const response = await request('wallet_connect', {
@@ -159,9 +161,13 @@ export async function checkWalletConnection(
         // Don't try to create a PhantomWalletAdapter as it can cause errors
         return !!(window as Window & { solana?: unknown }).solana
       case 'bitcoin':
-        // For Bitcoin, we'll just check if the window.bitcoin object exists
-        // The actual connection will be handled by sats-connect
-        return !!window.bitcoin
+        // For Bitcoin, we need to check if the window.bitcoin object exists
+        // But we need to do this safely to prevent hydration mismatches
+        if (typeof window === 'undefined') return false
+
+        // Check if window.bitcoin exists without directly accessing it
+        // This prevents hydration mismatches
+        return 'bitcoin' in window
       default:
         return false
     }

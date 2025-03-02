@@ -18,6 +18,7 @@ export default function WalletConnect({
 }: WalletConnectProps) {
   const [isClient, setIsClient] = useState(false)
   const [initialized, setInitialized] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
   // Use our custom hook for wallet connections
   const { connectedWallets, isConnecting, connectWallet, disconnectWallet } =
@@ -26,11 +27,12 @@ export default function WalletConnect({
   // First, safely determine if we're on the client
   useEffect(() => {
     setIsClient(true)
+    setIsMounted(true)
   }, [])
 
   // Sync connected wallets with parent component
   useEffect(() => {
-    if (!isClient) return
+    if (!isClient || !isMounted) return
 
     // Ensure connectedWallets is not null or undefined before using it
     if (connectedWallets) {
@@ -46,10 +48,12 @@ export default function WalletConnect({
         setInitialized(true)
       }
     }
-  }, [connectedWallets, setConnectedWallets, initialized, isClient])
+  }, [connectedWallets, setConnectedWallets, initialized, isClient, isMounted])
 
   // Sync the connected wallets from the hook with the parent component
   const handleConnectWallet = async (type: 'evm' | 'solana' | 'bitcoin') => {
+    if (!isClient) return
+
     try {
       await connectWallet(type)
     } catch (error) {
@@ -59,6 +63,8 @@ export default function WalletConnect({
   }
 
   const handleDisconnectWallet = (type: 'evm' | 'solana' | 'bitcoin') => {
+    if (!isClient) return
+
     disconnectWallet(type)
   }
 
@@ -69,6 +75,27 @@ export default function WalletConnect({
       { type: 'bitcoin', name: 'Xverse', icon: '/icons/bitcoin.svg' },
     ] as const
   }, [])
+
+  // Render a loading state during SSR
+  if (!isClient) {
+    return (
+      <div className='flex flex-col gap-6'>
+        <div className='flex justify-between items-center'>
+          <h3 className='text-xl font-bold'>Connect your wallets</h3>
+        </div>
+        <div className='grid gap-4 sm:grid-cols-3 justify-items-center'>
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className='card bg-base-200 shadow-md w-full max-w-xs animate-pulse'
+            >
+              <div className='card-body items-center justify-between text-center p-4 gap-2 h-[120px]'></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className='flex flex-col gap-6'>

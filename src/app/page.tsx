@@ -1,12 +1,17 @@
 'use client'
 
 import { lazy, Suspense, useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 
 import { ConnectedWallets } from '@/types/wallet'
 
 // Dynamically import components
 const BalanceDisplay = lazy(() => import('@/components/BalanceDisplay'))
-const TokenList = lazy(() => import('@/components/TokenList/TokenList'))
+// Import TokenList with no SSR to prevent hydration issues with AG Grid
+const TokenList = dynamic(() => import('@/components/TokenList/TokenList'), {
+  ssr: false,
+  loading: () => <LoadingDots />,
+})
 const WalletConnect = lazy(() => import('@/components/WalletConnect'))
 
 // Loading component using DaisyUI loading dots
@@ -19,7 +24,11 @@ function LoadingDots() {
 }
 
 export default function Home() {
+  // Use a state to track if we're on the client side
   const [isClient, setIsClient] = useState(false)
+
+  // Initialize wallet state with null values
+  // This ensures consistent rendering between server and client
   const [connectedWallets, setConnectedWallets] = useState<ConnectedWallets>({
     evm: null,
     solana: null,
@@ -31,7 +40,8 @@ export default function Home() {
     setIsClient(true)
   }, [])
 
-  // Show a simple loading state during SSR
+  // Show a simple loading state during SSR and initial client render
+  // This ensures the server and client render the same initial HTML
   if (!isClient) {
     return (
       <div className='min-h-screen p-4 md:p-8'>
@@ -45,6 +55,7 @@ export default function Home() {
     )
   }
 
+  // Once mounted on the client, render the full UI
   return (
     <div className='min-h-screen p-4 md:p-8'>
       <main className='container mx-auto'>
@@ -66,9 +77,8 @@ export default function Home() {
             <h2 className='text-xl font-semibold mb-4'>Tokens & Balances</h2>
             <div className='flex flex-col 2xl:flex-row gap-6 min-h-[600px]'>
               <div className='overflow-x-auto 2xl:w-1/2 h-full'>
-                <Suspense fallback={<LoadingDots />}>
-                  <TokenList />
-                </Suspense>
+                {/* TokenList is now loaded with dynamic import and no SSR */}
+                <TokenList />
               </div>
               <div className='2xl:w-1/2 h-full'>
                 <Suspense fallback={<LoadingDots />}>

@@ -47,11 +47,15 @@ const PriceCellRenderer = (props: { value: number | undefined }) => {
 }
 
 export default function TokenListTable({ tokens }: { tokens: Token[] }) {
+  // Add state for client-side rendering
+  const [mounted, setMounted] = useState(false)
   // Add state for screen size
   const [isSmallScreen, setIsSmallScreen] = useState(false)
 
   // Update screen size state on client side only
   useEffect(() => {
+    setMounted(true)
+
     const handleResize = () => {
       setIsSmallScreen(window.innerWidth < 640)
     }
@@ -131,6 +135,17 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
     }),
     []
   )
+
+  // Return a placeholder during SSR or before mounting
+  if (!mounted) {
+    return (
+      <div className='w-full h-full min-h-[500px] bg-base-200 animate-pulse rounded-md'>
+        <div className='p-4 text-center text-base-content/50'>
+          Loading token data...
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div

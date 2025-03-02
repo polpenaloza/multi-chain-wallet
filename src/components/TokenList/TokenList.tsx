@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
 
@@ -11,6 +11,12 @@ import { getAllTokens } from '@/services/lifi.service'
 
 function TokenList() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [mounted, setMounted] = useState(false)
+
+  // Set mounted state on client-side only
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const {
     data: tokensData,
@@ -57,7 +63,8 @@ function TokenList() {
     return [...new Set([...nameMatches, ...symbolMatches])]
   }, [rowData, searchTerm])
 
-  if (isLoading) return <TokenListSkeleton />
+  // Show skeleton during SSR or before mounting
+  if (!mounted || isLoading) return <TokenListSkeleton />
 
   if (error)
     return <div className='alert alert-error'>Failed to load tokens</div>
