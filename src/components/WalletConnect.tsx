@@ -5,8 +5,6 @@ import Image from 'next/image'
 
 import { useWalletConnection } from '@/hooks/useWalletConnection'
 
-import { setupMockWallets } from '@/lib/mock-wallets'
-
 import { ConnectedWallets } from '@/types/wallet'
 
 interface WalletConnectProps {
@@ -19,7 +17,6 @@ export default function WalletConnect({
   setConnectedWallets,
 }: WalletConnectProps) {
   const [isClient, setIsClient] = useState(false)
-  const [useMocks, setUseMocks] = useState(false)
   const [initialized, setInitialized] = useState(false)
 
   // Use our custom hook for wallet connections
@@ -29,8 +26,6 @@ export default function WalletConnect({
   // First, safely determine if we're on the client
   useEffect(() => {
     setIsClient(true)
-    // Only set useMocks after we know we're on the client
-    setUseMocks(process.env.NEXT_PUBLIC_USE_MOCK_WALLETS === 'true')
   }, [])
 
   // Sync connected wallets with parent component
@@ -52,15 +47,6 @@ export default function WalletConnect({
       }
     }
   }, [connectedWallets, setConnectedWallets, initialized, isClient])
-
-  // Setup mock wallets if enabled
-  useEffect(() => {
-    if (!isClient) return
-
-    if (useMocks && process.env.NODE_ENV === 'development') {
-      setupMockWallets()
-    }
-  }, [useMocks, isClient])
 
   // Sync the connected wallets from the hook with the parent component
   const handleConnectWallet = async (type: 'evm' | 'solana' | 'bitcoin') => {
@@ -86,36 +72,15 @@ export default function WalletConnect({
 
   return (
     <div className='flex flex-col gap-6'>
-      {isClient && process.env.NODE_ENV === 'development' && (
-        <div className='flex justify-end'>
-          <label className='flex items-center cursor-pointer'>
-            <input
-              type='checkbox'
-              className='toggle toggle-primary'
-              checked={useMocks}
-              onChange={() => {
-                const newValue = !useMocks
-                setUseMocks(newValue)
-                if (newValue) {
-                  setupMockWallets()
-                } else {
-                  // Reload to clear mock wallets
-                  window.location.reload()
-                }
-              }}
-            />
-            <span className='ml-2 text-sm'>Use mock wallets</span>
-          </label>
-        </div>
-      )}
+      <div className='flex justify-between items-center'>
+        <h3 className='text-xl font-bold'>Connect your wallets</h3>
+      </div>
 
-      <h2 className='text-2xl font-bold mb-4'>Connect Wallets</h2>
-
-      <div className='grid gap-4 sm:grid-cols-3'>
+      <div className='grid gap-4 sm:grid-cols-3 justify-items-center'>
         {wallets.map(({ type, name, icon }) => (
           <div
             key={type}
-            className={`card bg-base-200 shadow-md transition-all hover:shadow-lg ${
+            className={`card bg-base-200 shadow-md transition-all hover:shadow-lg w-full max-w-xs ${
               connectedWallets?.[type] ? 'border-2 border-success' : ''
             }`}
           >

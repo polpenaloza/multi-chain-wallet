@@ -163,6 +163,7 @@ export function useWalletConnection() {
             const isStillConnected = await checkWalletConnection(
               savedWallets[type]!
             )
+
             if (isStillConnected) {
               validatedWallets[type] = savedWallets[type]
             }

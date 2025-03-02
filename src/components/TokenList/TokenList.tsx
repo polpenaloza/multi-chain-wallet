@@ -63,7 +63,7 @@ function TokenList() {
     return <div className='alert alert-error'>Failed to load tokens</div>
 
   return (
-    <div className='w-full overflow-hidden p-2'>
+    <div className='w-full h-full flex flex-col overflow-hidden p-2'>
       <h3 className='text-lg font-medium mb-4'>Supported Tokens</h3>
 
       <div className='mb-4'>
@@ -83,7 +83,7 @@ function TokenList() {
         </p>
       )}
 
-      <div className='overflow-x-auto -mx-4 sm:mx-0'>
+      <div className='overflow-x-auto flex-1 -mx-4 sm:mx-0 h-full'>
         <TokenListTable tokens={filteredTokens} />
       </div>
     </div>

@@ -93,6 +93,9 @@ export async function connectSolanaWallet(): Promise<WalletType> {
 export async function connectBitcoinWallet(): Promise<WalletType> {
   try {
     console.log('Attempting to connect to Bitcoin wallet...')
+
+    // Check if Xverse is available through sats-connect
+    // We'll let the sats-connect library handle the detection
     const response = await request('wallet_connect', {
       addresses: [AddressPurpose.Payment],
       message: 'Connect to Multi-Chain Wallet',
@@ -133,6 +136,7 @@ export async function connectBitcoinWallet(): Promise<WalletType> {
     throw error
   }
 }
+
 export async function checkWalletConnection(
   wallet: WalletType
 ): Promise<boolean> {
@@ -155,7 +159,8 @@ export async function checkWalletConnection(
         // Don't try to create a PhantomWalletAdapter as it can cause errors
         return !!(window as Window & { solana?: unknown }).solana
       case 'bitcoin':
-        // For Bitcoin, check if Xverse is available
+        // For Bitcoin, we'll just check if the window.bitcoin object exists
+        // The actual connection will be handled by sats-connect
         return !!window.bitcoin
       default:
         return false

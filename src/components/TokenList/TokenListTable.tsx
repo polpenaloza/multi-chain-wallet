@@ -133,7 +133,10 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
   )
 
   return (
-    <div className='ag-theme-alpine-dark h-[400px] w-full pb-4'>
+    <div
+      className='ag-theme-alpine-dark w-full h-full'
+      style={{ height: '100%', minHeight: '500px' }}
+    >
       <AgGridReact
         rowData={safeTokens}
         columnDefs={columnDefs}
@@ -142,6 +145,7 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
         rowSelection='single'
         paginationPageSize={50}
         pagination
+        domLayout='normal'
       />
     </div>
   )

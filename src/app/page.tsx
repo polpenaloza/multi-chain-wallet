@@ -2,8 +2,6 @@
 
 import { lazy, Suspense, useEffect, useState } from 'react'
 
-import { setupMockWallets } from '@/lib/mock-wallets'
-
 import { ConnectedWallets } from '@/types/wallet'
 
 // Dynamically import components
@@ -22,7 +20,6 @@ function LoadingDots() {
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false)
-  const [isWalletReady, setIsWalletReady] = useState(false)
   const [connectedWallets, setConnectedWallets] = useState<ConnectedWallets>({
     evm: null,
     solana: null,
@@ -33,17 +30,6 @@ export default function Home() {
   useEffect(() => {
     setIsClient(true)
   }, [])
-
-  // Then handle wallet setup only on the client
-  useEffect(() => {
-    if (isClient) {
-      // Only use mocks if explicitly enabled via environment variable
-      if (process.env.NEXT_PUBLIC_USE_MOCK_WALLETS === 'true') {
-        setupMockWallets()
-      }
-      setIsWalletReady(true)
-    }
-  }, [isClient])
 
   // Show a simple loading state during SSR
   if (!isClient) {
@@ -59,14 +45,6 @@ export default function Home() {
     )
   }
 
-  if (!isWalletReady) {
-    return (
-      <div className='flex items-center justify-center min-h-screen'>
-        <span className='loading loading-dots loading-lg'></span>
-      </div>
-    )
-  }
-
   return (
     <div className='min-h-screen p-4 md:p-8'>
       <main className='container mx-auto'>
@@ -75,7 +53,6 @@ export default function Home() {
         <div className='grid gap-8'>
           {/* Wallet Connection Section */}
           <section className='card bg-base-200 p-4 sm:p-6'>
-            <h2 className='text-xl font-semibold mb-4'>Connect Wallets</h2>
             <Suspense fallback={<LoadingDots />}>
               <WalletConnect
                 connectedWallets={connectedWallets}
@@ -87,15 +64,17 @@ export default function Home() {
           {/* Token List & Balances Section */}
           <section className='card bg-base-200 p-4 sm:p-6'>
             <h2 className='text-xl font-semibold mb-4'>Tokens & Balances</h2>
-            <div className='grid lg:grid-cols-2 gap-6'>
-              <div className='overflow-x-auto'>
+            <div className='flex flex-col 2xl:flex-row gap-6 min-h-[600px]'>
+              <div className='overflow-x-auto 2xl:w-1/2 h-full'>
                 <Suspense fallback={<LoadingDots />}>
                   <TokenList />
                 </Suspense>
               </div>
-              <Suspense fallback={<LoadingDots />}>
-                <BalanceDisplay connectedWallets={connectedWallets} />
-              </Suspense>
+              <div className='2xl:w-1/2 h-full'>
+                <Suspense fallback={<LoadingDots />}>
+                  <BalanceDisplay connectedWallets={connectedWallets} />
+                </Suspense>
+              </div>
             </div>
           </section>
         </div>
