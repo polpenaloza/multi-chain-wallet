@@ -62,6 +62,13 @@ export default function WalletConnect({
     }
   }
 
+  const disconnectWallet = (type: 'evm' | 'solana' | 'bitcoin') => {
+    // Create a new object without the specified wallet
+    const { [type]: _, ...remainingWallets } = connectedWallets
+    setConnectedWallets(remainingWallets as ConnectedWallets)
+    toast.success(`${type.toUpperCase()} wallet disconnected`)
+  }
+
   return (
     <div className='flex flex-col gap-6'>
       {process.env.NODE_ENV === 'development' && (
@@ -89,9 +96,15 @@ export default function WalletConnect({
 
       <div className='grid gap-4 sm:grid-cols-3'>
         <button
-          onClick={() => connectWallet('evm')}
-          disabled={isConnecting || !!connectedWallets.evm}
-          className='btn btn-primary flex items-center justify-center gap-2'
+          onClick={() =>
+            connectedWallets.evm
+              ? disconnectWallet('evm')
+              : connectWallet('evm')
+          }
+          disabled={isConnecting}
+          className={`btn flex items-center justify-center gap-2 ${
+            connectedWallets.evm ? 'btn-error' : 'btn-primary'
+          }`}
         >
           <Image
             src='/icons/metamask.svg'
@@ -100,13 +113,19 @@ export default function WalletConnect({
             height={20}
             className='inline-block'
           />
-          {connectedWallets.evm ? 'EVM Connected' : 'Connect EVM'}
+          {connectedWallets.evm ? 'Disconnect EVM' : 'Connect EVM'}
         </button>
 
         <button
-          onClick={() => connectWallet('solana')}
-          disabled={isConnecting || !!connectedWallets.solana}
-          className='btn btn-primary flex items-center justify-center gap-2'
+          onClick={() =>
+            connectedWallets.solana
+              ? disconnectWallet('solana')
+              : connectWallet('solana')
+          }
+          disabled={isConnecting}
+          className={`btn flex items-center justify-center gap-2 ${
+            connectedWallets.solana ? 'btn-error' : 'btn-primary'
+          }`}
         >
           <Image
             src='/icons/solana.svg'
@@ -115,13 +134,19 @@ export default function WalletConnect({
             height={20}
             className='inline-block'
           />
-          {connectedWallets.solana ? 'Solana Connected' : 'Connect Solana'}
+          {connectedWallets.solana ? 'Disconnect Solana' : 'Connect Solana'}
         </button>
 
         <button
-          onClick={() => connectWallet('bitcoin')}
-          disabled={isConnecting || !!connectedWallets.bitcoin}
-          className='btn btn-primary flex items-center justify-center gap-2'
+          onClick={() =>
+            connectedWallets.bitcoin
+              ? disconnectWallet('bitcoin')
+              : connectWallet('bitcoin')
+          }
+          disabled={isConnecting}
+          className={`btn flex items-center justify-center gap-2 ${
+            connectedWallets.bitcoin ? 'btn-error' : 'btn-primary'
+          }`}
         >
           <Image
             src='/icons/bitcoin.svg'
@@ -130,7 +155,7 @@ export default function WalletConnect({
             height={20}
             className='inline-block'
           />
-          {connectedWallets.bitcoin ? 'Xverse Connected' : 'Connect Xverse'}
+          {connectedWallets.bitcoin ? 'Disconnect Xverse' : 'Connect Xverse'}
         </button>
       </div>
     </div>

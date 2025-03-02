@@ -1,7 +1,8 @@
+import simpleImportSortPlugin from 'eslint-plugin-simple-import-sort'
 import { dirname } from 'path'
 import { fileURLToPath } from 'url'
+
 import { FlatCompat } from '@eslint/eslintrc'
-import simpleImportSortPlugin from 'eslint-plugin-simple-import-sort'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -43,6 +44,11 @@ const eslintConfig = [
             ['^.+\\.?(css)$'],
           ],
         },
+      ],
+      // Allow unused variables that start with underscore
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
     },
     ignores: [
