@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { ColDef } from 'ag-grid-community'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
@@ -47,6 +47,27 @@ const PriceCellRenderer = (props: { value: number | undefined }) => {
 }
 
 export default function TokenListTable({ tokens }: { tokens: Token[] }) {
+  // Add state for screen size
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
+
+  // Update screen size state on client side only
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 640)
+    }
+
+    // Set initial value
+    handleResize()
+
+    // Add event listener for window resize
+    window.addEventListener('resize', handleResize)
+
+    // Clean up
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
   // Ensure tokens is an array before rendering
   const safeTokens = useMemo(() => {
     if (!tokens || !Array.isArray(tokens)) return []
@@ -82,7 +103,7 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
         field: 'name',
         sortable: true,
         filter: true,
-        hide: window?.innerWidth < 640, // Hide on small screens
+        hide: isSmallScreen, // Use state variable instead of direct window check
       },
       {
         headerName: 'Chain',
@@ -100,7 +121,7 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
         cellClass: 'ag-right-aligned-cell',
       },
     ],
-    []
+    [isSmallScreen] // Add isSmallScreen as a dependency
   )
 
   // Default column settings

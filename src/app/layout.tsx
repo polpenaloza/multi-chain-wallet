@@ -1,10 +1,11 @@
-import { Toaster } from 'react-hot-toast'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 
+import { ClientOnly } from '@/components/ClientOnly'
+
 import './globals.css'
 
-import { QueryProvider } from '@/providers/Query.provider'
+import { Providers } from '@/providers/Providers'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,8 +33,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-base-100`}
         data-theme='dark'
       >
-        <QueryProvider>{children}</QueryProvider>
-        <Toaster />
+        <ClientOnly>
+          <Providers>{children}</Providers>
+        </ClientOnly>
       </body>
     </html>
   )
