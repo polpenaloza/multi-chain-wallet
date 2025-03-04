@@ -81,11 +81,11 @@ export default function Home() {
           <section className='card bg-base-200 p-4 sm:p-6'>
             <h2 className='text-xl font-semibold mb-4'>Tokens & Balances</h2>
             <div className='flex flex-col 2xl:flex-row gap-6 min-h-[600px]'>
-              <div className='overflow-x-auto 2xl:w-1/2 h-full'>
-                <TokenList />
-              </div>
               <div className='2xl:w-1/2 h-full'>
                 <BalanceDisplay connectedWallets={connectedWallets} />
+              </div>
+              <div className='overflow-x-auto 2xl:w-1/2 h-full'>
+                <TokenList />
               </div>
             </div>
           </section>

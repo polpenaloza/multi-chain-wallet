@@ -24,16 +24,6 @@ interface CacheEntry {
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes - increase cache time to reduce API calls
 const cache: Record<string, CacheEntry> = {}
 
-// Mock data for when we hit rate limits
-const MOCK_BITCOIN_DATA: BitcoinAddressData = {
-  address: '',
-  final_balance: 12345678, // 0.12345678 BTC
-  n_tx: 5,
-  total_received: 50000000,
-  total_sent: 37654322,
-  txs: [],
-}
-
 function isRateLimited(address: string): boolean {
   const now = Date.now()
 
@@ -103,15 +93,10 @@ export async function GET(request: NextRequest) {
     // Check rate limit
     if (isRateLimited(address)) {
       console.log('Rate limit exceeded for Bitcoin address', address)
-
-      // Instead of returning an error, return mock data
-      // This ensures the UI doesn't break when we hit rate limits
-      const mockData = { ...MOCK_BITCOIN_DATA, address }
-
-      // Cache the mock data (but for a shorter time)
-      setCachedData(address, mockData)
-
-      return NextResponse.json(mockData)
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429 }
+      )
     }
 
     // Fetch the balance from the blockchain.info API with retry logic
@@ -157,10 +142,11 @@ export async function GET(request: NextRequest) {
 
     // If we couldn't get a successful response after retries
     if (!response || !response.ok) {
-      console.log('Failed to fetch Bitcoin data after retries, using mock data')
-      const mockData = { ...MOCK_BITCOIN_DATA, address }
-      setCachedData(address, mockData)
-      return NextResponse.json(mockData)
+      console.error('Failed to fetch Bitcoin data after retries')
+      return NextResponse.json(
+        { error: 'Failed to fetch Bitcoin data' },
+        { status: 503 }
+      )
     }
 
     // Get the data from the response
@@ -173,11 +159,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data)
   } catch (error) {
     console.error('Error in Bitcoin proxy API:', error)
-
-    // Return mock data instead of an error
-    const address = request.nextUrl.searchParams.get('address') || 'unknown'
-    const mockData = { ...MOCK_BITCOIN_DATA, address }
-
-    return NextResponse.json(mockData)
+    return NextResponse.json(
+      { error: 'Failed to fetch Bitcoin data' },
+      { status: 500 }
+    )
   }
 }

@@ -13,6 +13,21 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 ### Pre-Requisites
 
 - install pnpm <https://pnpm.io/installation>
+- (Optional) Get a Solana API key from [Alchemy](https://www.alchemy.com/) for reliable Solana RPC access
+- (Optional) Get a Bitcoin API key from [BlockCypher](https://accounts.blockcypher.com/) for reliable Bitcoin balance fetching
+
+### Environment Setup
+
+1. Create a `.env.local` file in the root directory
+2. Add your API keys (if you have them):
+
+```
+# Solana API key
+NEXT_PUBLIC_SOLANA_RPC_URL=https://solana-mainnet.g.alchemy.com/v2/your-api-key-here
+
+# BlockCypher API key for Bitcoin
+NEXT_PUBLIC_BLOCKCYPHER_API_KEY=your-blockcypher-api-key-here
+```
 
 ### Command lines
 
