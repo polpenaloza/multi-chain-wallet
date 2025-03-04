@@ -188,7 +188,7 @@ class WalletObserver {
   private startBitcoinPolling(): void {
     if (this.bitcoinPollingInterval) return
 
-    // Poll every 2 seconds
+    // Poll every 10 seconds instead of 2 seconds to reduce API calls
     this.bitcoinPollingInterval = setInterval(async () => {
       try {
         // Check if the wallet is still connected
@@ -210,7 +210,7 @@ class WalletObserver {
         // If we get an error, assume the wallet is disconnected
         this.updateAddress('bitcoin', null)
       }
-    }, 2000)
+    }, 10000) // Changed from 2000 to 10000 (10 seconds)
   }
 
   // Stop listening for wallet events

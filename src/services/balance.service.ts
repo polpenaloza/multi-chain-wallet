@@ -18,7 +18,7 @@ const SOLANA_RPC_ENDPOINTS = [
   'https://api.testnet.solana.com',
   'https://api.devnet.solana.com',
 ]
-const BTC_API_URL = 'https://blockchain.info/rawaddr'
+const BTC_API_URL = '/api/bitcoin/balance'
 
 // Mock data for development/demo purposes
 const MOCK_TOKENS: Record<
@@ -247,18 +247,33 @@ async function fetchBitcoinBalances(wallet: WalletType): Promise<Balance[]> {
   const walletDisplay = `${wallet.type}:${wallet.address.substring(0, 6)}...${wallet.address.substring(wallet.address.length - 4)}`
 
   try {
-    // Fetch BTC balance using a public API
-    const response = await fetch(`${BTC_API_URL}/${wallet.address}`)
+    console.log(`Fetching Bitcoin balance for ${walletDisplay}...`)
+
+    // Add a delay to avoid overwhelming the API
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    // Fetch BTC balance using our simplified API
+    const response = await fetch(`${BTC_API_URL}?address=${wallet.address}`, {
+      // Add cache control headers to prevent browser caching
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
+    })
 
     if (!response.ok) {
+      console.error(`Failed to fetch Bitcoin balance: ${response.statusText}`)
       throw new Error(`Failed to fetch Bitcoin balance: ${response.statusText}`)
     }
 
     const data = await response.json()
+    console.log(`Successfully fetched Bitcoin balance for ${walletDisplay}`)
 
     balances.push({
       token: 'BTC',
-      amount: (data.final_balance / 1e8).toFixed(8),
+      amount: data.balance,
       wallet: walletDisplay,
     })
 

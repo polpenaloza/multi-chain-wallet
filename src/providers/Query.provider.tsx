@@ -18,12 +18,21 @@ export function QueryProvider({ children }: QueryProviderProps) {
           queries: {
             // Prevent automatic refetching on window focus
             refetchOnWindowFocus: false,
-            // Retry failed queries only once
-            retry: 1,
+            // Retry failed queries with exponential backoff
+            retry: 2,
+            retryDelay: (attemptIndex) =>
+              Math.min(1000 * 2 ** attemptIndex, 30000),
             // Cache time of 5 minutes
             gcTime: 1000 * 60 * 5,
+            // Stale time of 30 seconds
+            staleTime: 1000 * 30,
             // Disable SSR for all queries to prevent hydration mismatches
             enabled: typeof window !== 'undefined',
+          },
+          mutations: {
+            // Retry failed mutations once
+            retry: 1,
+            retryDelay: 1000,
           },
         },
       })

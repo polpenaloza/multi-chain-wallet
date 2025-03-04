@@ -47,6 +47,8 @@ export default function BalanceDisplay({
     data: balances,
     isLoading,
     error,
+    refetch,
+    isRefetching,
   } = useQuery<Balance[]>({
     queryKey: ['balances', connectedWallets],
     queryFn: () => fetchWalletBalances(connectedWallets),
@@ -86,8 +88,11 @@ export default function BalanceDisplay({
     return (
       <div className='card bg-base-200 p-6'>
         <h3 className='text-lg font-medium mb-4'>Wallet Balances</h3>
-        <div className='flex justify-center'>
+        <div className='flex flex-col items-center gap-2'>
           <span className='loading loading-spinner loading-md'></span>
+          <p className='text-sm text-center'>
+            Fetching balances from blockchain...
+          </p>
         </div>
       </div>
     )
@@ -98,12 +103,40 @@ export default function BalanceDisplay({
     return (
       <div className='card bg-base-200 p-6'>
         <h3 className='text-lg font-medium mb-2'>Wallet Balances</h3>
-        <div className='alert alert-error'>
+        <div className='alert alert-error mb-4'>
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            className='stroke-current shrink-0 h-6 w-6'
+            fill='none'
+            viewBox='0 0 24 24'
+          >
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth='2'
+              d='M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'
+            />
+          </svg>
           <span>
             Error loading balances. Some blockchain APIs may be temporarily
             unavailable.
-            {error instanceof Error ? ` (${error.message})` : ''}
           </span>
+        </div>
+        <div className='flex justify-center'>
+          <button
+            className='btn btn-primary btn-sm'
+            onClick={() => refetch()}
+            disabled={isRefetching}
+          >
+            {isRefetching ? (
+              <>
+                <span className='loading loading-spinner loading-xs'></span>
+                Retrying...
+              </>
+            ) : (
+              'Retry'
+            )}
+          </button>
         </div>
       </div>
     )
@@ -125,7 +158,33 @@ export default function BalanceDisplay({
   // Render balances grouped by wallet
   return (
     <div className='card bg-base-200 p-6'>
-      <h3 className='text-lg font-medium mb-4'>Wallet Balances</h3>
+      <div className='flex justify-between items-center mb-4'>
+        <h3 className='text-lg font-medium'>Wallet Balances</h3>
+        <button
+          className='btn btn-ghost btn-sm'
+          onClick={() => refetch()}
+          disabled={isRefetching}
+        >
+          {isRefetching ? (
+            <span className='loading loading-spinner loading-xs'></span>
+          ) : (
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              className='h-5 w-5'
+              fill='none'
+              viewBox='0 0 24 24'
+              stroke='currentColor'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth='2'
+                d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+              />
+            </svg>
+          )}
+        </button>
+      </div>
 
       <div className='alert alert-info mb-4 text-sm'>
         <svg
