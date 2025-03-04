@@ -13,12 +13,20 @@ interface ClientOnlyProps {
 export function ClientOnly({ children }: ClientOnlyProps) {
   const [mounted, setMounted] = useState(false)
 
+  // Use useEffect to set mounted to true after hydration
   useEffect(() => {
-    setMounted(true)
+    // Set a small delay to ensure DOM is fully loaded
+    // This helps avoid hydration mismatches caused by browser extensions
+    const timer = setTimeout(() => {
+      setMounted(true)
+    }, 10)
+
+    return () => clearTimeout(timer)
   }, [])
 
+  // Return null on server-side rendering
   if (!mounted) {
-    return null
+    return <div style={{ visibility: 'hidden' }}></div>
   }
 
   return <>{children}</>

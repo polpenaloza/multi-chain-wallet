@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Service for fetching wallet balances from different blockchain ecosystems
  */

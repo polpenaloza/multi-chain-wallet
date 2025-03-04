@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
 
@@ -15,6 +15,13 @@ interface BalanceDisplayProps {
 export default function BalanceDisplay({
   connectedWallets,
 }: BalanceDisplayProps) {
+  const [mounted, setMounted] = useState(false)
+
+  // Set mounted state on client-side only
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Check if any wallet is connected
   const isAnyWalletConnected = useMemo(
     () => Object.values(connectedWallets).some((wallet) => wallet !== null),
@@ -43,12 +50,26 @@ export default function BalanceDisplay({
   } = useQuery<Balance[]>({
     queryKey: ['balances', connectedWallets],
     queryFn: () => fetchWalletBalances(connectedWallets),
-    enabled: isAnyWalletConnected,
+    enabled: isAnyWalletConnected && mounted,
     staleTime: 30 * 1000, // 30 seconds
     refetchInterval: 60 * 1000, // Refresh every minute
     retry: 2, // Retry failed requests up to 2 times
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
   })
+
+  // Show a loading skeleton during SSR or before mounting
+  if (!mounted) {
+    return (
+      <div className='card bg-base-200 p-6'>
+        <h3 className='text-lg font-medium mb-4'>Wallet Balances</h3>
+        <div className='space-y-4'>
+          <div className='skeleton h-8 w-full'></div>
+          <div className='skeleton h-20 w-full'></div>
+          <div className='skeleton h-20 w-full'></div>
+        </div>
+      </div>
+    )
+  }
 
   // If no wallets are connected, show a message
   if (!isAnyWalletConnected) {

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 
-import { useWalletConnection } from '@/hooks/useWalletConnection'
+import { useWalletObserverState } from '@/hooks/useWalletObserverState'
 
 import { ConnectedWallets } from '@/types/wallet'
 
@@ -18,24 +18,23 @@ export default function WalletConnect({
 }: WalletConnectProps) {
   const [isClient, setIsClient] = useState(false)
   const [initialized, setInitialized] = useState(false)
-  const [isMounted, setIsMounted] = useState(false)
 
-  // Use our custom hook for wallet connections
+  // Use our observer-based hook for wallet connections
   const { connectedWallets, isConnecting, connectWallet, disconnectWallet } =
-    useWalletConnection()
+    useWalletObserverState()
 
   // First, safely determine if we're on the client
   useEffect(() => {
     setIsClient(true)
-    setIsMounted(true)
   }, [])
 
   // Sync connected wallets with parent component
   useEffect(() => {
-    if (!isClient || !isMounted) return
+    if (!isClient) return
 
     // Ensure connectedWallets is not null or undefined before using it
     if (connectedWallets) {
+      // Update parent component with connected wallets
       setConnectedWallets(connectedWallets)
 
       // Mark as initialized after first sync
@@ -48,7 +47,7 @@ export default function WalletConnect({
         setInitialized(true)
       }
     }
-  }, [connectedWallets, setConnectedWallets, initialized, isClient, isMounted])
+  }, [connectedWallets, setConnectedWallets, initialized, isClient])
 
   // Sync the connected wallets from the hook with the parent component
   const handleConnectWallet = async (type: 'evm' | 'solana' | 'bitcoin') => {
@@ -125,19 +124,39 @@ export default function WalletConnect({
                 )}
               </div>
               <h3 className='card-title text-lg'>{name}</h3>
-              <button
-                onClick={() =>
-                  connectedWallets?.[type]
-                    ? handleDisconnectWallet(type)
-                    : handleConnectWallet(type)
-                }
-                disabled={isConnecting}
-                className={`btn btn-sm ${
-                  connectedWallets?.[type] ? 'btn-error' : 'btn-primary'
-                }`}
-              >
-                {connectedWallets?.[type] ? 'Disconnect' : 'Connect'}
-              </button>
+              {connectedWallets?.[type] ? (
+                <div className='flex flex-col gap-2 w-full'>
+                  <div
+                    className='text-sm font-medium bg-base-300 py-1 px-2 rounded-md truncate max-w-full cursor-help'
+                    title={connectedWallets[type]?.address}
+                  >
+                    {connectedWallets[type]?.address.slice(0, 6)}...
+                    {connectedWallets[type]?.address.slice(-4)}
+                  </div>
+                  <button
+                    onClick={() => handleDisconnectWallet(type)}
+                    disabled={isConnecting}
+                    className='btn btn-sm btn-error'
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleConnectWallet(type)}
+                  disabled={isConnecting}
+                  className='btn btn-sm btn-primary'
+                >
+                  {isConnecting ? (
+                    <>
+                      <span className='loading loading-spinner loading-xs'></span>
+                      Connecting...
+                    </>
+                  ) : (
+                    'Connect'
+                  )}
+                </button>
+              )}
             </div>
           </div>
         ))}

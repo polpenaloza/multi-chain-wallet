@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Service for interacting with the Li.Fi API
  * Documentation: https://docs.li.fi/li.fi-api/li.fi-api

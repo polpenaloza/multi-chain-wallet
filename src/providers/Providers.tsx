@@ -15,7 +15,12 @@ export function Providers({ children }: ProvidersProps) {
 
   // Only mount providers after client-side hydration is complete
   useEffect(() => {
-    setMounted(true)
+    // Small delay to ensure DOM is fully loaded
+    const timer = setTimeout(() => {
+      setMounted(true)
+    }, 10)
+
+    return () => clearTimeout(timer)
   }, [])
 
   // During SSR and initial client render, render a minimal version
@@ -23,8 +28,8 @@ export function Providers({ children }: ProvidersProps) {
   if (!mounted) {
     return (
       <div className='min-h-screen'>
-        {/* Render a minimal version of the UI without any providers */}
-        {/* This prevents hydration mismatches */}
+        {/* Render a placeholder with the same structure as the actual content */}
+        {/* This helps prevent hydration mismatches */}
         <div className='flex items-center justify-center min-h-screen'>
           <div className='loading loading-dots loading-lg'></div>
         </div>
