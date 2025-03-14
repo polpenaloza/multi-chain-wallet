@@ -1,16 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import Image from 'next/image'
-import { ColDef } from 'ag-grid-community'
-import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
+import { AllCommunityModule, ColDef, ModuleRegistry } from 'ag-grid-community'
 import { AgGridReact } from 'ag-grid-react'
 
 import { Token } from '@/services/lifi.service'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
-// Custom cell renderer for token logos
 const LogoCellRenderer = (props: { value: string; data: Token }) => {
   const { data } = props
 
@@ -39,7 +37,6 @@ const LogoCellRenderer = (props: { value: string; data: Token }) => {
   )
 }
 
-// Custom cell renderer for price formatting
 const PriceCellRenderer = (props: { value: number | undefined }) => {
   const { value } = props
   if (!value) return <span>N/A</span>
@@ -47,36 +44,9 @@ const PriceCellRenderer = (props: { value: number | undefined }) => {
 }
 
 export default function TokenListTable({ tokens }: { tokens: Token[] }) {
-  // Add state for client-side rendering
-  const [mounted, setMounted] = useState(false)
-  // Add state for screen size
-  const [isSmallScreen, setIsSmallScreen] = useState(false)
-
-  // Update screen size state on client side only
-  useEffect(() => {
-    setMounted(true)
-
-    const handleResize = () => {
-      setIsSmallScreen(window.innerWidth < 640)
-    }
-
-    // Set initial value
-    handleResize()
-
-    // Add event listener for window resize
-    window.addEventListener('resize', handleResize)
-
-    // Clean up
-    return () => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [])
-
-  // Ensure tokens is an array before rendering
   const safeTokens = useMemo(() => {
     if (!tokens || !Array.isArray(tokens)) return []
 
-    // Filter out any potentially problematic tokens
     return tokens.filter(
       (token) =>
         token &&
@@ -85,81 +55,58 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
     )
   }, [tokens])
 
-  // Column definitions
   const columnDefs = useMemo<ColDef<Token>[]>(
     () => [
       {
-        headerName: 'Logo',
+        headerName: 'Token',
         field: 'logoURI',
         cellRenderer: LogoCellRenderer,
-        width: 80,
+        width: 70,
         sortable: false,
         filter: false,
       },
       {
         headerName: 'Symbol',
         field: 'symbol',
+        flex: 1,
+        minWidth: 100,
         sortable: true,
-        filter: true,
-      },
-      {
-        headerName: 'Name',
-        field: 'name',
-        sortable: true,
-        filter: true,
-        hide: isSmallScreen, // Use state variable instead of direct window check
-      },
-      {
-        headerName: 'Chain',
-        field: 'chainId',
-        sortable: true,
-        filter: true,
       },
       {
         headerName: 'Price',
         field: 'priceUSD',
         cellRenderer: PriceCellRenderer,
+        width: 100,
         sortable: true,
         type: 'numericColumn',
         headerClass: 'ag-right-aligned-header',
         cellClass: 'ag-right-aligned-cell',
       },
     ],
-    [isSmallScreen] // Add isSmallScreen as a dependency
+    []
   )
 
-  // Default column settings
   const defaultColDef = useMemo(
     () => ({
+      flex: 1,
       resizable: true,
+      sortable: true,
+      filter: false,
     }),
     []
   )
 
-  // Return a placeholder during SSR or before mounting
-  if (!mounted) {
-    return (
-      <div className='w-full h-full min-h-[500px] bg-base-200 animate-pulse rounded-md'>
-        <div className='p-4 text-center text-base-content/50'>
-          Loading token data...
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div
-      className='ag-theme-alpine-dark w-full h-full'
-      style={{ height: '100%', minHeight: '500px' }}
-    >
+    <div className='ag-theme-alpine-dark w-full' style={{ height: '500px' }}>
       <AgGridReact
         rowData={safeTokens}
         columnDefs={columnDefs}
         defaultColDef={defaultColDef}
-        animateRows={true}
+        animateRows={false}
         rowSelection='single'
-        paginationPageSize={50}
         pagination
+        paginationPageSize={20}
+        suppressPaginationPanel={false}
         domLayout='normal'
       />
     </div>

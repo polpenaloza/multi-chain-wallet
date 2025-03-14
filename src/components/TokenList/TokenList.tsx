@@ -13,7 +13,7 @@ function TokenList() {
   const [searchTerm, setSearchTerm] = useState('')
   const [mounted, setMounted] = useState(false)
 
-  // Set mounted state on client-side only
+  // Set mounted state and check screen size on client-side only
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -90,8 +90,10 @@ function TokenList() {
         </p>
       )}
 
-      <div className='overflow-x-auto flex-1 -mx-4 sm:mx-0 h-full'>
-        <TokenListTable tokens={filteredTokens} />
+      <div className='flex-1 h-full max-w-full'>
+        <div className='overflow-x-auto overflow-y-hidden rounded-lg border border-base-300 h-full'>
+          <TokenListTable tokens={filteredTokens} />
+        </div>
       </div>
     </div>
   )

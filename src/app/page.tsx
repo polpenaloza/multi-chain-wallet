@@ -68,7 +68,7 @@ export default function Home() {
       <main className='container mx-auto'>
         <h1 className='text-2xl font-bold mb-8'>Multi-Chain Wallet</h1>
 
-        <div className='grid gap-8'>
+        <div className='flex flex-col gap-8'>
           {/* Wallet Connection Section */}
           <section className='card bg-base-200 p-4 sm:p-6'>
             <WalletConnect
