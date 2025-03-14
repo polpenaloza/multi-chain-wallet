@@ -63,6 +63,7 @@
   },
   "scripts": {
     "build": "next build",
+    "check:lint": "next lint --fix",
     "check:types": "tsc --pretty --noEmit",
     "clean": "pnpm clean:dist && pnpm clean:eslint && pnpm clean:next && pnpm clean:out && pnpm clean:node",
     "clean:dist": "find . -name dist | xargs rm -rf",
@@ -73,7 +74,6 @@
     "clean:quick": "find . -name node_modules -o -name .next -o -name dist -type d -prune | xargs rm -rf",
     "dev": "next dev --turbopack",
     "format": "prettier . --write",
-    "lint": "next lint --fix",
     "maintenance": "pnpm clean:quick && pnpm install",
     "nuke": "pnpm clean && rm pnpm-lock.yaml && pnpm install",
     "prepare": "husky",

@@ -8,9 +8,6 @@ on:
       - beta
       - v1
 
-env:
-  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
 jobs:
   PrTitle:
     runs-on: ubuntu-latest
@@ -23,8 +20,3 @@ jobs:
           fetch-depth: 0
       - name: Check PR title
         uses: ./.github/actions/pr-title
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Slack Error Notification
-      #   uses: ./.github/actions/slack-error
-      #   if: failure()
