@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React from 'react'
 import Image from 'next/image'
 import {
   AllCommunityModule,
@@ -14,12 +15,13 @@ import { Token } from '@/services/lifi.service'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
-// Add this interface at the top of the file, after imports
+// Define the extended grid API type
 interface ExtendedGridApi<T> extends GridApi<T> {
   paginationSetPageSize(size: number): void
 }
 
-const LogoCellRenderer = (props: { value: string; data: Token }) => {
+// Memoized cell renderers for better performance
+const LogoCellRenderer = React.memo((props: { value: string; data: Token }) => {
   const { data } = props
 
   if (data.logoURI) {
@@ -35,6 +37,7 @@ const LogoCellRenderer = (props: { value: string; data: Token }) => {
             ;(e.target as HTMLImageElement).src =
               'https://placehold.co/32x32?text=?'
           }}
+          loading='lazy' // Add lazy loading for images
         />
       </div>
     )
@@ -45,102 +48,124 @@ const LogoCellRenderer = (props: { value: string; data: Token }) => {
       {data?.symbol?.charAt(0)}
     </div>
   )
-}
+})
 
-const PriceCellRenderer = (props: { value: number | undefined }) => {
+LogoCellRenderer.displayName = 'LogoCellRenderer'
+
+const PriceCellRenderer = React.memo((props: { value: number | undefined }) => {
   const { value } = props
   if (!value) return <span>N/A</span>
   return <span>{`$${Number(value).toFixed(2)}`}</span>
-}
+})
+
+PriceCellRenderer.displayName = 'PriceCellRenderer'
 
 // Custom pagination component
-const CustomPagination = ({ api }: { api: ExtendedGridApi<Token> }) => {
-  const [currentPage, setCurrentPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  const [pageSize, setPageSize] = useState(20)
+const CustomPagination = React.memo(
+  ({ api }: { api: ExtendedGridApi<Token> }) => {
+    const [currentPage, setCurrentPage] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
+    const [pageSize, setPageSize] = useState(20)
 
-  // Update pagination state when it changes
-  const onPaginationChanged = useCallback(() => {
-    if (api) {
-      setCurrentPage(api.paginationGetCurrentPage())
-      setTotalPages(api.paginationGetTotalPages())
-      setPageSize(api.paginationGetPageSize())
-    }
-  }, [api])
-
-  // Register for pagination changes
-  useEffect(() => {
-    if (api) {
-      api.addEventListener('paginationChanged', onPaginationChanged)
-      onPaginationChanged() // Initialize values
-
-      return () => {
-        api.removeEventListener('paginationChanged', onPaginationChanged)
-      }
-    }
-  }, [api, onPaginationChanged])
-
-  const goToPrevPage = useCallback(() => {
-    if (api) {
-      api.paginationGoToPreviousPage()
-    }
-  }, [api])
-
-  const goToNextPage = useCallback(() => {
-    if (api) {
-      api.paginationGoToNextPage()
-    }
-  }, [api])
-
-  // Change page size
-  const changePageSize = useCallback(
-    (newSize: number) => {
+    // Update pagination state when it changes
+    const onPaginationChanged = useCallback(() => {
       if (api) {
-        // Cast to extended interface
-        ;(api as ExtendedGridApi<Token>).paginationSetPageSize(newSize)
+        setCurrentPage(api.paginationGetCurrentPage())
+        setTotalPages(api.paginationGetTotalPages())
+        setPageSize(api.paginationGetPageSize())
       }
-    },
-    [api]
-  )
+    }, [api])
 
-  return (
-    <div className='flex items-center justify-between p-2 border-t border-base-300 bg-base-100'>
-      <div className='flex items-center'>
-        <button
-          onClick={goToPrevPage}
-          disabled={currentPage === 0}
-          className='btn btn-sm btn-square btn-ghost px-2 min-h-8 h-8'
-          aria-label='Previous page'
-        >
-          ←
-        </button>
-        <span className='text-xs px-1 text-center min-w-[60px]'>
-          {currentPage + 1}/{totalPages || 1}
-        </span>
-        <button
-          onClick={goToNextPage}
-          disabled={currentPage >= totalPages - 1}
-          className='btn btn-sm btn-square btn-ghost px-2 min-h-8 h-8'
-          aria-label='Next page'
-        >
-          →
-        </button>
-      </div>
-      <div className='flex items-center min-w-14'>
-        <select
-          value={pageSize}
-          onChange={(e) => changePageSize(Number(e.target.value))}
-          className='select select-xs select-bordered h-8 min-h-8 px-2'
-          aria-label='Page size'
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-        </select>
-      </div>
-    </div>
-  )
-}
+    // Register for pagination changes
+    useEffect(() => {
+      if (api) {
+        api.addEventListener('paginationChanged', onPaginationChanged)
+        onPaginationChanged() // Initialize values
+
+        return () => {
+          api.removeEventListener('paginationChanged', onPaginationChanged)
+        }
+      }
+    }, [api, onPaginationChanged])
+
+    const goToPrevPage = useCallback(() => {
+      if (api) {
+        api.paginationGoToPreviousPage()
+      }
+    }, [api])
+
+    const goToNextPage = useCallback(() => {
+      if (api) {
+        api.paginationGoToNextPage()
+      }
+    }, [api])
+
+    // Change page size
+    const changePageSize = useCallback(
+      (newSize: number) => {
+        if (api) {
+          // Cast to extended interface
+          ;(api as ExtendedGridApi<Token>).paginationSetPageSize(newSize)
+        }
+      },
+      [api]
+    )
+
+    // Memoize the pagination buttons to prevent unnecessary re-renders
+    const paginationButtons = useMemo(() => {
+      return (
+        <div className='flex items-center justify-between mt-4 px-2'>
+          <div className='flex items-center space-x-2'>
+            <span className='text-sm'>Rows per page:</span>
+            <select
+              className='select select-bordered select-sm'
+              value={pageSize}
+              onChange={(e) => changePageSize(Number(e.target.value))}
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+
+          <div className='flex items-center space-x-2'>
+            <span className='text-sm'>
+              Page {currentPage + 1} of {totalPages || 1}
+            </span>
+            <div className='btn-group'>
+              <button
+                className='btn btn-sm'
+                onClick={goToPrevPage}
+                disabled={currentPage === 0}
+              >
+                «
+              </button>
+              <button
+                className='btn btn-sm'
+                onClick={goToNextPage}
+                disabled={currentPage >= totalPages - 1}
+              >
+                »
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    }, [
+      currentPage,
+      totalPages,
+      pageSize,
+      goToPrevPage,
+      goToNextPage,
+      changePageSize,
+    ])
+
+    return paginationButtons
+  }
+)
+
+CustomPagination.displayName = 'CustomPagination'
 
 export default function TokenListTable({ tokens }: { tokens: Token[] }) {
   const [gridApi, setGridApi] = useState<GridApi<Token> | null>(null)
@@ -148,13 +173,27 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false)
   const gridRef = useRef<AgGridReact>(null)
 
-  // Check screen size on mount
+  // Check screen size on mount and when window resizes
   useEffect(() => {
-    const width = window.innerWidth
-    setIsMobile(width < 768)
-    setIsSmallScreen(width < 380)
+    const handleResize = () => {
+      const width = window.innerWidth
+      setIsMobile(width < 768)
+      setIsSmallScreen(width < 380)
+    }
+
+    // Initial check
+    handleResize()
+
+    // Add event listener
+    window.addEventListener('resize', handleResize)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
+  // Memoize the tokens to prevent unnecessary re-renders
   const safeTokens = useMemo(() => {
     if (!tokens || !Array.isArray(tokens)) return []
 
@@ -166,6 +205,7 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
     )
   }, [tokens])
 
+  // Memoize column definitions to prevent unnecessary re-renders
   const columnDefs = useMemo<ColDef<Token>[]>(
     () => [
       {
@@ -199,6 +239,7 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
     [isSmallScreen]
   )
 
+  // Memoize default column definition to prevent unnecessary re-renders
   const defaultColDef = useMemo(
     () => ({
       flex: 1,
@@ -247,6 +288,10 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
           suppressPaginationPanel={true}
           domLayout='normal'
           onGridReady={onGridReady}
+          rowBuffer={10} // Increase row buffer for smoother scrolling
+          cacheBlockSize={100} // Optimize cache block size
+          maxBlocksInCache={10} // Limit cache size
+          suppressCellFocus={true} // Improve performance by disabling cell focus
         />
       </div>
       {gridApi && <CustomPagination api={gridApi as ExtendedGridApi<Token>} />}
