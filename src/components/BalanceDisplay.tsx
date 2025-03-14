@@ -1,16 +1,93 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { useQueries } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 
-import { ConnectedWallets } from '@/types/wallet'
+import { Balance, ConnectedWallets } from '@/types/wallet'
 
 import {
   fetchBitcoinBalances,
   fetchEVMBalances,
   fetchSolanaBalances,
+  fetchWalletBalances,
 } from '@/services/balance.service'
+
+// Memoized wallet section components to prevent unnecessary re-renders
+const WalletSection = React.memo(
+  ({
+    title,
+    isLoading,
+    isRefetching,
+    error,
+    data,
+    onRefetch,
+    filterFn,
+  }: {
+    title: string
+    isLoading: boolean
+    isRefetching: boolean
+    error: unknown
+    data: Balance[] | undefined
+    onRefetch: () => void
+    filterFn: (balance: Balance) => boolean
+  }) => {
+    // Memoize filtered balances
+    const filteredData = useMemo(() => {
+      return data?.filter(filterFn) || []
+    }, [data, filterFn])
+
+    return (
+      <div className='card bg-base-300 shadow-sm'>
+        <div className='card-body p-4'>
+          <div className='flex justify-between items-center'>
+            <h4 className='card-title text-sm'>{title}</h4>
+            {isRefetching && (
+              <span className='loading loading-spinner loading-xs'></span>
+            )}
+          </div>
+
+          {isLoading && !isRefetching ? (
+            <div className='flex items-center gap-2 py-2'>
+              <span className='loading loading-spinner loading-xs'></span>
+              <span className='text-sm'>Fetching balance...</span>
+            </div>
+          ) : error ? (
+            <div className='alert alert-error text-sm py-2 mb-2'>
+              <span>Error loading balances</span>
+              <button className='btn btn-xs' onClick={onRefetch}>
+                Retry
+              </button>
+            </div>
+          ) : filteredData.length > 0 ? (
+            <div className='overflow-x-auto'>
+              <table className='table table-sm'>
+                <thead>
+                  <tr>
+                    <th>Token</th>
+                    <th className='text-right'>Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.map((balance, index) => (
+                    <tr key={`${balance.token}-${index}`} className='hover'>
+                      <td>{balance.token}</td>
+                      <td className='text-right font-mono'>{balance.amount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className='text-center text-sm py-2'>No balances found</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+)
+
+WalletSection.displayName = 'WalletSection'
 
 interface BalanceDisplayProps {
   connectedWallets: ConnectedWallets
@@ -20,6 +97,7 @@ export default function BalanceDisplay({
   connectedWallets,
 }: BalanceDisplayProps) {
   const [mounted, setMounted] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
   // Set mounted state on client-side only
   useEffect(() => {
@@ -74,12 +152,45 @@ export default function BalanceDisplay({
   // Extract data and loading states for each wallet type
   const [evmQuery, solanaQuery, bitcoinQuery] = walletQueries
 
+  // Create a combined query for all balances
+  const allBalancesQuery = useQuery({
+    queryKey: [
+      'all-balances',
+      connectedWallets.evm?.address,
+      connectedWallets.solana?.address,
+      connectedWallets.bitcoin?.address,
+    ],
+    queryFn: () => fetchWalletBalances(connectedWallets),
+    enabled: isAnyWalletConnected && mounted,
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
+  })
+
+  // Memoize the filter function to prevent unnecessary re-renders
+  const filterBalance = useCallback(
+    (balance: Balance) => {
+      if (!searchTerm) return true
+      const term = searchTerm.toLowerCase()
+      return balance.token.toLowerCase().includes(term)
+    },
+    [searchTerm]
+  )
+
+  // Handle search input change
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchTerm(e.target.value)
+    },
+    []
+  )
+
   // Refetch all balances
-  const refetchAll = () => {
+  const refetchAll = useCallback(() => {
     if (connectedWallets.evm) evmQuery.refetch()
     if (connectedWallets.solana) solanaQuery.refetch()
     if (connectedWallets.bitcoin) bitcoinQuery.refetch()
-  }
+    allBalancesQuery.refetch()
+  }, [connectedWallets, evmQuery, solanaQuery, bitcoinQuery, allBalancesQuery])
 
   // Show a loading skeleton during SSR or before mounting
   if (!mounted) {
@@ -116,12 +227,14 @@ export default function BalanceDisplay({
           disabled={
             evmQuery.isRefetching ||
             solanaQuery.isRefetching ||
-            bitcoinQuery.isRefetching
+            bitcoinQuery.isRefetching ||
+            allBalancesQuery.isRefetching
           }
         >
           {evmQuery.isRefetching ||
           solanaQuery.isRefetching ||
-          bitcoinQuery.isRefetching ? (
+          bitcoinQuery.isRefetching ||
+          allBalancesQuery.isRefetching ? (
             <span className='loading loading-spinner loading-xs'></span>
           ) : (
             <svg
@@ -142,6 +255,16 @@ export default function BalanceDisplay({
         </button>
       </div>
 
+      <div className='mb-4'>
+        <input
+          type='text'
+          placeholder='Search tokens...'
+          className='input input-bordered w-full focus:bg-base-100 focus:text-base-content focus:outline-primary'
+          value={searchTerm}
+          onChange={handleSearchChange}
+        />
+      </div>
+
       <div className='alert alert-info mb-4 text-sm'>
         <svg
           xmlns='http://www.w3.org/2000/svg'
@@ -157,184 +280,49 @@ export default function BalanceDisplay({
           ></path>
         </svg>
         <span>
-          Only native tokens (ETH, SOL, BTC) are displayed due to API
-          limitations.
+          Showing token balances for connected wallets. Some values may be
+          placeholders due to API limitations.
         </span>
       </div>
 
       <div className='space-y-6'>
         {/* EVM Wallet Section */}
         {connectedWallets.evm && (
-          <div className='card bg-base-300 shadow-sm'>
-            <div className='card-body p-4'>
-              <div className='flex justify-between items-center'>
-                <h4 className='card-title text-sm'>
-                  {`evm:${connectedWallets.evm.address.substring(0, 6)}...${connectedWallets.evm.address.substring(connectedWallets.evm.address.length - 4)}`}
-                </h4>
-                {evmQuery.isRefetching && (
-                  <span className='loading loading-spinner loading-xs'></span>
-                )}
-              </div>
-
-              {evmQuery.isLoading && !evmQuery.isRefetching ? (
-                <div className='flex items-center gap-2 py-2'>
-                  <span className='loading loading-spinner loading-xs'></span>
-                  <span className='text-sm'>Fetching EVM balance...</span>
-                </div>
-              ) : evmQuery.error ? (
-                <div className='alert alert-error text-sm py-2 mb-2'>
-                  <span>Error loading EVM balances</span>
-                  <button
-                    className='btn btn-xs'
-                    onClick={() => evmQuery.refetch()}
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : evmQuery.data && evmQuery.data.length > 0 ? (
-                <div className='overflow-x-auto'>
-                  <table className='table table-sm'>
-                    <thead>
-                      <tr>
-                        <th>Token</th>
-                        <th className='text-right'>Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {evmQuery.data.map((balance, index) => (
-                        <tr key={index} className='hover'>
-                          <td>{balance.token}</td>
-                          <td className='text-right font-mono'>
-                            {balance.amount}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className='text-center text-sm py-2'>
-                  No EVM balances found
-                </p>
-              )}
-            </div>
-          </div>
+          <WalletSection
+            title={`evm:${connectedWallets.evm.address.substring(0, 6)}...${connectedWallets.evm.address.substring(connectedWallets.evm.address.length - 4)}`}
+            isLoading={evmQuery.isLoading}
+            isRefetching={evmQuery.isRefetching}
+            error={evmQuery.error}
+            data={evmQuery.data}
+            onRefetch={() => evmQuery.refetch()}
+            filterFn={filterBalance}
+          />
         )}
 
         {/* Solana Wallet Section */}
         {connectedWallets.solana && (
-          <div className='card bg-base-300 shadow-sm'>
-            <div className='card-body p-4'>
-              <div className='flex justify-between items-center'>
-                <h4 className='card-title text-sm'>
-                  {`solana:${connectedWallets.solana.address.substring(0, 6)}...${connectedWallets.solana.address.substring(connectedWallets.solana.address.length - 4)}`}
-                </h4>
-                {solanaQuery.isRefetching && (
-                  <span className='loading loading-spinner loading-xs'></span>
-                )}
-              </div>
-
-              {solanaQuery.isLoading && !solanaQuery.isRefetching ? (
-                <div className='flex items-center gap-2 py-2'>
-                  <span className='loading loading-spinner loading-xs'></span>
-                  <span className='text-sm'>Fetching Solana balance...</span>
-                </div>
-              ) : solanaQuery.error ? (
-                <div className='alert alert-error text-sm py-2 mb-2'>
-                  <span>Error loading Solana balances</span>
-                  <button
-                    className='btn btn-xs'
-                    onClick={() => solanaQuery.refetch()}
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : solanaQuery.data && solanaQuery.data.length > 0 ? (
-                <div className='overflow-x-auto'>
-                  <table className='table table-sm'>
-                    <thead>
-                      <tr>
-                        <th>Token</th>
-                        <th className='text-right'>Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {solanaQuery.data.map((balance, index) => (
-                        <tr key={index} className='hover'>
-                          <td>{balance.token}</td>
-                          <td className='text-right font-mono'>
-                            {balance.amount}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className='text-center text-sm py-2'>
-                  No Solana balances found
-                </p>
-              )}
-            </div>
-          </div>
+          <WalletSection
+            title={`solana:${connectedWallets.solana.address.substring(0, 6)}...${connectedWallets.solana.address.substring(connectedWallets.solana.address.length - 4)}`}
+            isLoading={solanaQuery.isLoading}
+            isRefetching={solanaQuery.isRefetching}
+            error={solanaQuery.error}
+            data={solanaQuery.data}
+            onRefetch={() => solanaQuery.refetch()}
+            filterFn={filterBalance}
+          />
         )}
 
         {/* Bitcoin Wallet Section */}
         {connectedWallets.bitcoin && (
-          <div className='card bg-base-300 shadow-sm'>
-            <div className='card-body p-4'>
-              <div className='flex justify-between items-center'>
-                <h4 className='card-title text-sm'>
-                  {`bitcoin:${connectedWallets.bitcoin.address.substring(0, 6)}...${connectedWallets.bitcoin.address.substring(connectedWallets.bitcoin.address.length - 4)}`}
-                </h4>
-                {bitcoinQuery.isRefetching && (
-                  <span className='loading loading-spinner loading-xs'></span>
-                )}
-              </div>
-
-              {bitcoinQuery.isLoading && !bitcoinQuery.isRefetching ? (
-                <div className='flex items-center gap-2 py-2'>
-                  <span className='loading loading-spinner loading-xs'></span>
-                  <span className='text-sm'>Fetching Bitcoin balance...</span>
-                </div>
-              ) : bitcoinQuery.error ? (
-                <div className='alert alert-error text-sm py-2 mb-2'>
-                  <span>Error loading Bitcoin balances</span>
-                  <button
-                    className='btn btn-xs'
-                    onClick={() => bitcoinQuery.refetch()}
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : bitcoinQuery.data && bitcoinQuery.data.length > 0 ? (
-                <div className='overflow-x-auto'>
-                  <table className='table table-sm'>
-                    <thead>
-                      <tr>
-                        <th>Token</th>
-                        <th className='text-right'>Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bitcoinQuery.data.map((balance, index) => (
-                        <tr key={index} className='hover'>
-                          <td>{balance.token}</td>
-                          <td className='text-right font-mono'>
-                            {balance.amount}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className='text-center text-sm py-2'>
-                  No Bitcoin balances found
-                </p>
-              )}
-            </div>
-          </div>
+          <WalletSection
+            title={`bitcoin:${connectedWallets.bitcoin.address.substring(0, 6)}...${connectedWallets.bitcoin.address.substring(connectedWallets.bitcoin.address.length - 4)}`}
+            isLoading={bitcoinQuery.isLoading}
+            isRefetching={bitcoinQuery.isRefetching}
+            error={bitcoinQuery.error}
+            data={bitcoinQuery.data}
+            onRefetch={() => bitcoinQuery.refetch()}
+            filterFn={filterBalance}
+          />
         )}
       </div>
     </div>

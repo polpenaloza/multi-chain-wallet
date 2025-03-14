@@ -4,7 +4,7 @@ name: "PR Title Validation"
 description: "Verify that the PR title complies with semantic-release standards"
 
 inputs:
-  token:
+  gpa_token:
     description: "A Github PAT"
     required: true
 
@@ -19,13 +19,13 @@ runs:
         allowed_prefixes: "build,feature,feat,fix,hotfix,chore,perf,refactor,test,update,upgrade"
         prefix_case_sensitive: true
         max_length: 80
-        github_token: ${{ inputs.token }}
+        gpa_token: ${{ inputs.gpa_token }}
 
     - uses: mshick/add-pr-comment@v1
       name: Comment on PR
       if: ${{ failure() }}
       env:
-        GITHUB_TOKEN: ${{ inputs.token }}
+        GPA_TOKEN: ${{ inputs.gpa_token }}
       with:
         message: |
           Please fix the title of this PR.
