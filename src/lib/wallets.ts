@@ -38,6 +38,39 @@ export async function connectSolanaWallet(): Promise<WalletType> {
   }
 
   try {
+    // Check if already connected first
+    const solana = window.solana as unknown as {
+      isConnected?: boolean
+      publicKey?: { toString: () => string }
+      connect: () => Promise<{ publicKey: { toString: () => string } }>
+    }
+
+    // If already connected, just return the current address
+    if (solana.isConnected && solana.publicKey) {
+      console.log('Phantom wallet already connected, using existing connection')
+      return {
+        address: solana.publicKey.toString(),
+        type: 'solana' as const,
+      }
+    }
+
+    // Try direct connection first (this is more reliable than using the adapter)
+    try {
+      const { publicKey } = await solana.connect()
+      if (publicKey) {
+        return {
+          address: publicKey.toString(),
+          type: 'solana' as const,
+        }
+      }
+    } catch (directError) {
+      console.log(
+        'Direct Phantom connection failed, trying adapter',
+        directError
+      )
+    }
+
+    // Fallback to adapter if direct connection fails
     // Create a new adapter instance with defensive error handling
     let phantom
     try {
@@ -116,8 +149,11 @@ export async function connectBitcoinWallet(): Promise<WalletType> {
           }
         }
       }
-    } catch {
-      console.log('No existing connection, will prompt user to connect')
+    } catch (error) {
+      console.log(
+        'No existing connection or wallet locked, will prompt user to connect',
+        error
+      )
     }
 
     // If we couldn't get the account, prompt the user to connect
