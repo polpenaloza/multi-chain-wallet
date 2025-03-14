@@ -32,6 +32,55 @@ export async function connectEVMWallet(): Promise<WalletType> {
 }
 
 export async function connectSolanaWallet(): Promise<WalletType> {
+  // First check if we're on a mobile device
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    )
+
+  // Check if we're using Brave browser
+  // Use a safer approach to detect Brave browser
+  let isBrave = false
+  try {
+    // @ts-expect-error - Brave browser adds this property to navigator
+    isBrave = (navigator.brave && (await navigator.brave.isBrave())) || false
+  } catch {
+    // Not using Brave browser - silently continue
+  }
+
+  // Mobile-specific handling
+  if (isMobile) {
+    console.log('Mobile device detected, using deep linking for Phantom wallet')
+
+    try {
+      // For mobile, we need to use deep linking to open the Phantom app
+      // Create a unique connection ID to prevent caching issues
+      const connectionId = `phantom-connect-${Date.now()}`
+
+      // Create a deep link URL to the Phantom app
+      // The redirect URL should be the current page
+      const redirectUrl = encodeURIComponent(window.location.href)
+      const deepLink = `https://phantom.app/ul/v1/connect?app=Multi-Chain%20Wallet&redirect=${redirectUrl}&connection_id=${connectionId}`
+
+      // For Brave browser specifically, we need to use window.open with _blank target
+      // This prevents the redirect loop issue in Brave mobile
+      if (isBrave) {
+        window.open(deepLink, '_blank')
+      } else {
+        // For other mobile browsers, we can use window.location
+        window.location.href = deepLink
+      }
+
+      // Since we're redirecting, we need to throw an error to prevent further execution
+      // The connection will be handled when the user is redirected back to the app
+      throw new Error('Redirecting to Phantom app...')
+    } catch (error) {
+      console.error('Error connecting to Phantom on mobile:', error)
+      throw error
+    }
+  }
+
+  // Desktop handling (existing code)
   // First check if Phantom is available in the window object
   if (!window.solana) {
     throw new Error('Phantom wallet not installed')
@@ -116,6 +165,9 @@ export async function connectSolanaWallet(): Promise<WalletType> {
         throw new Error('Connection rejected by user')
       } else if (error.message.includes('timed out')) {
         throw new Error('Connection timed out')
+      } else if (error.message.includes('Redirecting to Phantom app')) {
+        // This is expected for mobile redirects
+        throw error
       }
     }
 
@@ -264,13 +316,24 @@ export const isWalletInstalled = async (
   type: 'evm' | 'solana' | 'bitcoin'
 ): Promise<boolean> => {
   try {
+    // Check if we're on a mobile device
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      )
+
     switch (type) {
       case 'evm':
         // Check if MetaMask is installed
         return typeof window !== 'undefined' && !!window.ethereum
 
       case 'solana':
-        // Check if Phantom is installed
+        // On mobile, we'll assume Phantom is available through deep linking
+        // This prevents the "wallet not installed" error on mobile
+        if (isMobile) {
+          return true
+        }
+        // On desktop, check if Phantom is installed
         return typeof window !== 'undefined' && !!window.solana?.isPhantom
 
       case 'bitcoin':
