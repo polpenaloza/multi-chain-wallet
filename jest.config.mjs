@@ -19,10 +19,6 @@ const customJestConfig = {
     '^../types/(.*)$': '<rootDir>/src/types/$1',
   },
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],
-  transform: {
-    // Use babel-jest to transpile tests with the next/babel preset
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
-  },
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
