@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-import { useQueries } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 
-import { ConnectedWallets } from '@/types/wallet'
+import { Balance, ConnectedWallets } from '@/types/wallet'
 
 import {
   fetchBitcoinBalances,
   fetchEVMBalances,
   fetchSolanaBalances,
+  fetchWalletBalances,
 } from '@/services/balance.service'
 
 interface BalanceDisplayProps {
@@ -20,6 +21,7 @@ export default function BalanceDisplay({
   connectedWallets,
 }: BalanceDisplayProps) {
   const [mounted, setMounted] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
   // Set mounted state on client-side only
   useEffect(() => {
@@ -74,12 +76,61 @@ export default function BalanceDisplay({
   // Extract data and loading states for each wallet type
   const [evmQuery, solanaQuery, bitcoinQuery] = walletQueries
 
+  // Alternative approach: fetch all balances at once
+  const allBalancesQuery = useQuery({
+    queryKey: [
+      'balances',
+      'all',
+      connectedWallets.evm?.address,
+      connectedWallets.solana?.address,
+      connectedWallets.bitcoin?.address,
+    ],
+    queryFn: () => fetchWalletBalances(connectedWallets),
+    enabled: isAnyWalletConnected && mounted,
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
+    retry: 2,
+  })
+
   // Refetch all balances
   const refetchAll = () => {
     if (connectedWallets.evm) evmQuery.refetch()
     if (connectedWallets.solana) solanaQuery.refetch()
     if (connectedWallets.bitcoin) bitcoinQuery.refetch()
+    if (isAnyWalletConnected) allBalancesQuery.refetch()
   }
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value.toLowerCase())
+  }
+
+  // Filter balances based on search term
+  const filterBalances = (balances: Balance[]) => {
+    if (!searchTerm) return balances
+    return balances.filter(
+      (balance) =>
+        balance.token.toLowerCase().includes(searchTerm) ||
+        balance.wallet.toLowerCase().includes(searchTerm)
+    )
+  }
+
+  // Group balances by wallet type
+  const _groupedBalances = useMemo(() => {
+    if (!allBalancesQuery.data) return {}
+
+    return allBalancesQuery.data.reduce(
+      (acc, balance) => {
+        const walletType = balance.wallet.split(':')[0]
+        if (!acc[walletType]) {
+          acc[walletType] = []
+        }
+        acc[walletType].push(balance)
+        return acc
+      },
+      {} as Record<string, Balance[]>
+    )
+  }, [allBalancesQuery.data])
 
   // Show a loading skeleton during SSR or before mounting
   if (!mounted) {
@@ -116,12 +167,14 @@ export default function BalanceDisplay({
           disabled={
             evmQuery.isRefetching ||
             solanaQuery.isRefetching ||
-            bitcoinQuery.isRefetching
+            bitcoinQuery.isRefetching ||
+            allBalancesQuery.isRefetching
           }
         >
           {evmQuery.isRefetching ||
           solanaQuery.isRefetching ||
-          bitcoinQuery.isRefetching ? (
+          bitcoinQuery.isRefetching ||
+          allBalancesQuery.isRefetching ? (
             <span className='loading loading-spinner loading-xs'></span>
           ) : (
             <svg
@@ -142,6 +195,16 @@ export default function BalanceDisplay({
         </button>
       </div>
 
+      <div className='mb-4'>
+        <input
+          type='text'
+          placeholder='Search tokens...'
+          className='input input-bordered w-full focus:bg-base-100 focus:text-base-content focus:outline-primary'
+          value={searchTerm}
+          onChange={handleSearchChange}
+        />
+      </div>
+
       <div className='alert alert-info mb-4 text-sm'>
         <svg
           xmlns='http://www.w3.org/2000/svg'
@@ -157,8 +220,8 @@ export default function BalanceDisplay({
           ></path>
         </svg>
         <span>
-          Only native tokens (ETH, SOL, BTC) are displayed due to API
-          limitations.
+          Showing token balances for connected wallets. Some values may be
+          placeholders due to API limitations.
         </span>
       </div>
 
@@ -201,7 +264,7 @@ export default function BalanceDisplay({
                       </tr>
                     </thead>
                     <tbody>
-                      {evmQuery.data.map((balance, index) => (
+                      {filterBalances(evmQuery.data).map((balance, index) => (
                         <tr key={index} className='hover'>
                           <td>{balance.token}</td>
                           <td className='text-right font-mono'>
@@ -259,14 +322,16 @@ export default function BalanceDisplay({
                       </tr>
                     </thead>
                     <tbody>
-                      {solanaQuery.data.map((balance, index) => (
-                        <tr key={index} className='hover'>
-                          <td>{balance.token}</td>
-                          <td className='text-right font-mono'>
-                            {balance.amount}
-                          </td>
-                        </tr>
-                      ))}
+                      {filterBalances(solanaQuery.data).map(
+                        (balance, index) => (
+                          <tr key={index} className='hover'>
+                            <td>{balance.token}</td>
+                            <td className='text-right font-mono'>
+                              {balance.amount}
+                            </td>
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -317,14 +382,16 @@ export default function BalanceDisplay({
                       </tr>
                     </thead>
                     <tbody>
-                      {bitcoinQuery.data.map((balance, index) => (
-                        <tr key={index} className='hover'>
-                          <td>{balance.token}</td>
-                          <td className='text-right font-mono'>
-                            {balance.amount}
-                          </td>
-                        </tr>
-                      ))}
+                      {filterBalances(bitcoinQuery.data).map(
+                        (balance, index) => (
+                          <tr key={index} className='hover'>
+                            <td>{balance.token}</td>
+                            <td className='text-right font-mono'>
+                              {balance.amount}
+                            </td>
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>
