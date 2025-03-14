@@ -25,7 +25,7 @@ runs:
       name: Comment on PR
       if: ${{ failure() }}
       env:
-        GITHUB_TOKEN: ${{ inputs.token }}
+        GPA_TOKEN: ${{ inputs.token }}
       with:
         message: |
           Please fix the title of this PR.
