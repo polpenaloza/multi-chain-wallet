@@ -1,143 +1,140 @@
 # Multi-Chain Wallet
 
-A React-based frontend application that enables users to connect wallets for multiple blockchain protocols (EVM, Solana, and UTXO) and displays their wallet balances. The solution is implemented using TypeScript, Next.js, React Query, and Tailwind CSS with DaisyUI.
+Hey there! 👋 This is my implementation of a multi-chain wallet frontend that lets you connect to different blockchain networks simultaneously. I built this with React, TypeScript, Next.js, and styled it with Tailwind + DaisyUI.
 
-## Features
+## Live Demo
 
-- Connect to multiple blockchain wallets simultaneously:
-  - EVM-based wallets (MetaMask)
-  - Solana wallets (Phantom)
-  - Bitcoin wallets (Xverse)
-- View token list from LI.FI API with optimized rendering
-- Display wallet balances for connected wallets
-- Search and filter tokens and balances
-- Responsive design for all screen sizes
+🚀 **Check out the live demo**: [https://wallet.polpenaloza.dev/](https://wallet.polpenaloza.dev/)
 
-## Setup
+I've hooked this project up to Vercel's build mechanism for continuous deployment, so you can always see the latest version at the URL above!
 
-### Dependencies
+## What it does
 
-- [node](https://nodejs.org/en/download/) v20x
-- [nvm](https://github.com/nvm-sh/nvm/tree/master) v0.38.x (optional)
-- [pnpm](https://pnpm.io/) v9.x
+This app lets you:
 
-### Pre-Requisites
+- Connect to multiple blockchain wallets at the same time:
+  - MetaMask for Ethereum and other EVM chains
+  - Phantom for Solana
+  - Xverse for Bitcoin
+- Browse tokens from the LI.FI API (with optimized rendering so it doesn't choke your browser)
+- See your actual wallet balances across different chains
+- Search and filter through your tokens
+- Works great on mobile too!
 
-- Install pnpm <https://pnpm.io/installation>
-- (Optional) Get a Solana API key from [Alchemy](https://www.alchemy.com/) for reliable Solana RPC access
-- (Optional) Get a Bitcoin API key from [BlockCypher](https://accounts.blockcypher.com/) for reliable Bitcoin balance fetching
+## Getting it running
 
-### Environment Setup
+> 💡 **Pro tip**: If you just want to see the app in action without setting it up locally, visit the live demo at [https://wallet.polpenaloza.dev/](https://wallet.polpenaloza.dev/)
 
-1. Create a `.env.local` file in the root directory
-2. Add your API keys (if you have them):
+### What you'll need
 
-```
-# Solana API key
+- Node.js v20.x (I recommend using nvm to manage Node versions)
+- pnpm v9.x for package management
+
+### Nice-to-haves (but optional)
+
+If you want the best experience with reliable RPC connections:
+
+- A Solana API key from [Alchemy](https://www.alchemy.com/)
+- A Bitcoin API key from [BlockCypher](https://accounts.blockcypher.com/)
+
+The app will work without these, but you might hit rate limits with the public endpoints.
+
+### Setting up your environment
+
+1. Clone this repo
+2. Create a `.env.local` file in the root with your API keys (if you have them):
+
+```sh
+# For better Solana RPC access
 NEXT_PUBLIC_SOLANA_RPC_URL=https://solana-mainnet.g.alchemy.com/v2/your-api-key-here
 
-# BlockCypher API key for Bitcoin
+# For more reliable Bitcoin balance fetching
 NEXT_PUBLIC_BLOCKCYPHER_API_KEY=your-blockcypher-api-key-here
 ```
 
-### Installation and Running
+### Installation & running locally
 
 ```bash
-# Install dependencies
+# Get all the dependencies
 pnpm i
 
-# Run development server
+# Fire up the dev server
 pnpm run dev
 
-# Run tests
+# Run the tests
 pnpm test
 
 # Build for production
 pnpm build
 
-# Start production server
+# Run the production build
 pnpm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+Once running, just open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Design Decisions
+## How I built it
 
 ### Architecture
 
-The application follows a modular architecture with clear separation of concerns:
+I tried to keep things modular and maintainable:
 
-- **Components**: UI components for wallet connection, token list, and balance display
-- **Services**: API services for fetching token data and wallet balances
-- **Hooks**: Custom hooks for wallet state management
-- **Providers**: Context providers for global state and configuration
-- **Types**: TypeScript type definitions for the application
+- **Components**: Split into logical UI pieces for wallet connections, token lists, etc.
+- **Services**: Separate API services for different blockchain interactions
+- **Hooks**: Custom React hooks to handle wallet state and connections
+- **Providers**: Context providers where global state made sense
+- **Types**: Proper TypeScript definitions throughout
 
 ### State Management
 
-- **React Query**: Used for data fetching, caching, and state management for API calls
-- **React Hooks**: Used for component-level state management
-- **Custom Hooks**: Created for wallet connection and state management
+I kept it simple:
 
-### UI/UX
+- **React Query** for data fetching and caching (works great for the token lists)
+- **React's built-in hooks** for component state
+- **Custom hooks** to abstract wallet connection logic
 
-- **DaisyUI**: Used for UI components and theming
-- **Tailwind CSS**: Used for styling and responsive design
-- **AG Grid**: Used for efficient rendering of large token lists
+### UI/UX Choices
 
-### Performance Optimizations
+- Used **DaisyUI** components as a foundation
+- **Tailwind CSS** for styling (makes responsive design so much easier)
+- **AG Grid** for the token list (handles large datasets way better than regular tables)
 
-- **Dynamic Imports**: Used for code splitting and lazy loading
-- **Memoization**: Used to prevent unnecessary re-renders
-- **Pagination**: Implemented for token list to handle large datasets
-- **Search Filtering**: Optimized for performance with debouncing
+## Challenges I ran into
 
-## Challenges and Solutions
+### Wallet Connection Headaches
 
-### Wallet Connection
+Dealing with multiple wallet providers was tricky since each has its own API quirks. I ended up creating a unified pattern that abstracts away the differences, which made the rest of the app much cleaner.
 
-**Challenge**: Connecting to multiple blockchain wallets with different APIs and interfaces.
+### Performance with Token Lists
 
-**Solution**: Created a unified wallet observer pattern that abstracts away the differences between wallet providers. This allows for a consistent interface for connecting, disconnecting, and monitoring wallet state changes.
-
-### Token List Rendering
-
-**Challenge**: Efficiently rendering a large list of tokens from the LI.FI API.
-
-**Solution**: Implemented AG Grid for virtualized rendering and pagination. This allows for efficient rendering of large datasets with minimal performance impact.
-
-### Balance Fetching
-
-**Challenge**: Fetching balances for multiple tokens across different blockchain ecosystems.
-
-**Solution**: Created a balance service that handles fetching balances for each wallet type. Used React Query for efficient data fetching, caching, and state management.
+The LI.FI API returns a LOT of tokens. Rendering them all at once killed performance, so I implemented virtualized rendering with AG Grid and added pagination. This made a huge difference.
 
 ### Cross-Chain Compatibility
 
-**Challenge**: Ensuring compatibility across different blockchain ecosystems with varying APIs and data structures.
-
-**Solution**: Created abstraction layers for each blockchain ecosystem to normalize data and provide a consistent interface for the UI.
+Each blockchain ecosystem has its own way of doing things - from how addresses are formatted to how balances are calculated. I had to create normalization layers to make everything work together smoothly.
 
 ## Testing
 
-The application includes unit tests for key components and functionality:
+I've written unit tests for the core functionality:
 
-- Wallet connection tests
-- Token list rendering tests
-- Balance display tests
+- Wallet connection/disconnection flows
+- Token list rendering
+- Balance display logic
 
-Run tests with:
+Run them with:
 
 ```bash
 pnpm test
 ```
 
-## Future Improvements
+## What's next?
 
-- Add support for more wallet providers
-- Implement real-time balance updates
-- Add transaction history
-- Enhance token search with advanced filtering
-- Implement dark/light theme toggle
-- Add more comprehensive error handling and recovery
-- Expand test coverage with integration and end-to-end tests
+If I had more time, I'd love to add:
+
+- Transaction history
+- Better token search with more filtering options
+- Dark/light theme toggle (who doesn't love dark mode?)
+- More robust error handling for edge cases
+- More comprehensive test coverage
+
+Feel free to reach out if you have any questions or suggestions!
