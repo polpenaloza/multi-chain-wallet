@@ -222,7 +222,8 @@ export async function fetchSolanaBalances(
     // Add placeholder balances for the top tokens
     // In a real implementation, we would fetch actual balances using token program calls
     for (const token of tokensToCheck) {
-      if (token.symbol !== 'SOL') { // Skip SOL as we already added it
+      if (token.symbol !== 'SOL') {
+        // Skip SOL as we already added it
         balances.push({
           token: token.symbol,
           amount: '0.0000', // Placeholder value
@@ -298,7 +299,6 @@ export async function fetchBitcoinBalances(
       amount: '0.0000', // Placeholder
       wallet: walletDisplay,
     })
-
   } catch (error) {
     console.error('Error fetching Bitcoin balance:', error)
 

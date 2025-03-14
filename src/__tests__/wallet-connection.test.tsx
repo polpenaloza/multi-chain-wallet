@@ -9,9 +9,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 // Define the wallet event type to avoid using 'any'
 interface WalletEvent {
-  evm: { address: string; type: 'evm' } | null;
-  solana: { address: string; type: 'solana' } | null;
-  bitcoin: { address: string; type: 'bitcoin' } | null;
+  evm: { address: string; type: 'evm' } | null
+  solana: { address: string; type: 'solana' } | null
+  bitcoin: { address: string; type: 'bitcoin' } | null
 }
 
 // Mock the WalletConnect component to prevent the act() warning
@@ -65,9 +65,9 @@ jest.mock('../components/WalletConnect', () => {
 
 // Define the ConnectedWallets type
 interface ConnectedWallets {
-  evm: { address: string; type: 'evm' } | null;
-  solana: { address: string; type: 'solana' } | null;
-  bitcoin: { address: string; type: 'bitcoin' } | null;
+  evm: { address: string; type: 'evm' } | null
+  solana: { address: string; type: 'solana' } | null
+  bitcoin: { address: string; type: 'bitcoin' } | null
 }
 
 describe('WalletConnection Component', () => {
@@ -80,10 +80,12 @@ describe('WalletConnection Component', () => {
     const mockSubscribe = walletObserver.subscribe as jest.Mock
     let subscriberCallback: ((data: WalletEvent) => void) | null = null
 
-    mockSubscribe.mockImplementation((callback: (data: WalletEvent) => void) => {
-      subscriberCallback = callback
-      return { unsubscribe: jest.fn() }
-    })
+    mockSubscribe.mockImplementation(
+      (callback: (data: WalletEvent) => void) => {
+        subscriberCallback = callback
+        return { unsubscribe: jest.fn() }
+      }
+    )
 
     // Render the component
     await act(async () => {
@@ -91,14 +93,14 @@ describe('WalletConnection Component', () => {
         evm: null,
         solana: null,
         bitcoin: null,
-      };
-      const setConnectedWallets = jest.fn();
+      }
+      const setConnectedWallets = jest.fn()
       render(
         <WalletConnection
           connectedWallets={initialWallets}
           setConnectedWallets={setConnectedWallets}
         />
-      );
+      )
     })
 
     // Check if connect buttons are rendered

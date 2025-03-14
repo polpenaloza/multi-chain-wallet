@@ -20,3 +20,5 @@ jobs:
           fetch-depth: 0
       - name: Check PR title
         uses: ./.github/actions/pr-title
+        with:
+          gpa_token: ${{ secrets.GPA_TOKEN }}
