@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
+import { createWalletClient, custom } from 'viem'
 
 import { WalletEvent, walletObserver } from '@/lib/walletObserver'
 import {
@@ -75,6 +76,64 @@ export function useWalletObserverState() {
     // Cleanup on unmount
     return unsubscribe
   }, [isClient, handleWalletEvent])
+
+  // Attempt auto-reconnect for all wallet types on mount
+  useEffect(() => {
+    if (!isClient) return
+
+    const attemptAutoReconnect = async () => {
+      // Don't set isConnecting to true here to avoid UI flicker
+      // We're doing this silently in the background
+
+      // Try to auto-reconnect to EVM wallet
+      if (window.ethereum) {
+        try {
+          const client = createWalletClient({
+            transport: custom(window.ethereum),
+          })
+          const [address] = await client.requestAddresses()
+          if (address) {
+            console.log('Auto-reconnected to EVM wallet')
+          }
+        } catch (error) {
+          console.log(
+            'EVM auto-reconnect failed, user will need to connect manually',
+            error
+          )
+        }
+      }
+
+      // For Solana and Bitcoin, the walletObserver will handle auto-reconnection
+      // This is just a fallback in case the observer doesn't catch it
+
+      // Try to auto-reconnect to Solana wallet
+      if (window.solana?.isPhantom) {
+        try {
+          await connectSolanaWallet()
+          console.log('Auto-reconnected to Solana wallet via hook')
+        } catch (error) {
+          // Ignore errors, the user will need to connect manually
+          console.log('Solana auto-reconnect failed in hook', error)
+        }
+      }
+
+      // Try to auto-reconnect to Bitcoin wallet
+      try {
+        await connectBitcoinWallet()
+        console.log('Auto-reconnected to Bitcoin wallet via hook')
+      } catch (error) {
+        // Ignore errors, the user will need to connect manually
+        console.log('Bitcoin auto-reconnect failed in hook', error)
+      }
+    }
+
+    // Attempt auto-reconnect with a slight delay to ensure extensions are loaded
+    const timer = setTimeout(() => {
+      attemptAutoReconnect()
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  }, [isClient])
 
   // Connect to a wallet
   const connectWallet = useCallback(

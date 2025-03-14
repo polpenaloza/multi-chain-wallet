@@ -152,9 +152,10 @@ class WalletObserver {
         try {
           const solana = window.solana as unknown as {
             publicKey?: { toString: () => string }
+            isConnected?: boolean
           }
 
-          if (solana?.publicKey) {
+          if (solana?.publicKey && solana?.isConnected) {
             this.updateAddress('solana', solana.publicKey.toString())
           } else {
             this.updateAddress('solana', null)
@@ -167,21 +168,79 @@ class WalletObserver {
       try {
         const solanaEvents = window.solana as unknown as {
           on: (event: string, handler: () => void) => void
+          connect: () => Promise<{ publicKey: { toString: () => string } }>
+          isConnected?: boolean
+          publicKey?: { toString: () => string }
         }
 
         solanaEvents.on('connect', handleSolanaAccountChange)
         solanaEvents.on('disconnect', handleSolanaAccountChange)
         solanaEvents.on('accountChanged', handleSolanaAccountChange)
 
-        // Check initial state
-        handleSolanaAccountChange()
+        // Check initial state and attempt auto-reconnect
+        if (solanaEvents.isConnected && solanaEvents.publicKey) {
+          // Already connected, just update the address
+          this.updateAddress('solana', solanaEvents.publicKey.toString())
+        } else if (
+          solanaEvents.connect &&
+          typeof solanaEvents.connect === 'function'
+        ) {
+          // Try to auto-reconnect silently
+          solanaEvents
+            .connect()
+            .then(({ publicKey }) => {
+              if (publicKey) {
+                this.updateAddress('solana', publicKey.toString())
+                console.log('Successfully auto-reconnected to Phantom wallet')
+              }
+            })
+            .catch((err) => {
+              console.log(
+                'Phantom auto-reconnect failed, user will need to connect manually',
+                err
+              )
+            })
+        } else {
+          // Fallback to checking current state
+          handleSolanaAccountChange()
+        }
       } catch (err) {
         console.error('Error setting up Solana wallet listeners:', err)
       }
     }
 
-    // Setup Bitcoin wallet polling
+    // Setup Bitcoin wallet polling and attempt auto-reconnect
     this.startBitcoinPolling()
+    this.attemptBitcoinAutoReconnect()
+  }
+
+  // Attempt to auto-reconnect to Bitcoin wallet
+  private attemptBitcoinAutoReconnect(): void {
+    if (typeof window === 'undefined') return
+
+    // Try to get the current account without prompting the user
+    setTimeout(async () => {
+      try {
+        const response = await satsConnect.request('wallet_getAccount', null)
+
+        if (response.status === 'success' && response.result) {
+          // Find the payment address
+          const paymentAddressItem = response.result.addresses.find(
+            (address) => address.purpose === 'payment'
+          )
+
+          if (paymentAddressItem) {
+            this.updateAddress('bitcoin', paymentAddressItem.address)
+            console.log('Successfully auto-reconnected to Xverse wallet')
+          }
+        }
+      } catch (error) {
+        console.log(
+          'Xverse auto-reconnect failed, user will need to connect manually',
+          error
+        )
+      }
+    }, 1000) // Short delay to ensure wallet extension is fully loaded
   }
 
   // Start Bitcoin polling

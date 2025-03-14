@@ -15,12 +15,10 @@ import { Token } from '@/services/lifi.service'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
-// Define the extended grid API type
 interface ExtendedGridApi<T> extends GridApi<T> {
   paginationSetPageSize(size: number): void
 }
 
-// Memoized cell renderers for better performance
 const LogoCellRenderer = React.memo((props: { value: string; data: Token }) => {
   const { data } = props
 
@@ -60,7 +58,6 @@ const PriceCellRenderer = React.memo((props: { value: number | undefined }) => {
 
 PriceCellRenderer.displayName = 'PriceCellRenderer'
 
-// Custom pagination component
 const CustomPagination = React.memo(
   ({ api }: { api: ExtendedGridApi<Token> }) => {
     const [currentPage, setCurrentPage] = useState(0)
@@ -76,11 +73,10 @@ const CustomPagination = React.memo(
       }
     }, [api])
 
-    // Register for pagination changes
     useEffect(() => {
       if (api) {
         api.addEventListener('paginationChanged', onPaginationChanged)
-        onPaginationChanged() // Initialize values
+        onPaginationChanged()
 
         return () => {
           api.removeEventListener('paginationChanged', onPaginationChanged)
@@ -100,23 +96,20 @@ const CustomPagination = React.memo(
       }
     }, [api])
 
-    // Change page size
     const changePageSize = useCallback(
       (newSize: number) => {
         if (api) {
-          // Cast to extended interface
-          ;(api as ExtendedGridApi<Token>).paginationSetPageSize(newSize)
+          // The correct way to set pagination page size
+          api.paginationSetPageSize(newSize)
         }
       },
       [api]
     )
 
-    // Memoize the pagination buttons to prevent unnecessary re-renders
     const paginationButtons = useMemo(() => {
       return (
         <div className='flex items-center justify-between mt-4 px-2'>
           <div className='flex items-center space-x-2'>
-            <span className='text-sm'>Rows per page:</span>
             <select
               className='select select-bordered select-sm'
               value={pageSize}
@@ -173,7 +166,6 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false)
   const gridRef = useRef<AgGridReact>(null)
 
-  // Check screen size on mount and when window resizes
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth
@@ -181,13 +173,10 @@ export default function TokenListTable({ tokens }: { tokens: Token[] }) {
       setIsSmallScreen(width < 380)
     }
 
-    // Initial check
     handleResize()
 
-    // Add event listener
     window.addEventListener('resize', handleResize)
 
-    // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize)
     }
